@@ -2,7 +2,8 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 
-const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
+
 
 const sendEmail = async (to, subject, html) => {
   const transporter = nodemailer.createTransport({
