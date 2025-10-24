@@ -172,6 +172,39 @@ const forgotPassword = async (req, res) => {
     }
   };
 
+  const resendOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpires = Date.now() + 5 * 60 * 1000;
+    await user.save();
+
+  
+    await sendEmail(
+      email,
+      "SnapHive OTP Resend Request",
+      `
+        <div style="font-family:sans-serif;line-height:1.6">
+          <h2>Here’s your new SnapHive verification code 🔄</h2>
+          <p>Your new OTP code is:</p>
+          <h1 style="background:#000;color:#fff;display:inline-block;padding:8px 16px;border-radius:8px;">${otp}</h1>
+          <p>This code will expire in 5 minutes.</p>
+        </div>
+      `
+    );
+
+    res.json({ message: "OTP resent successfully" });
+  } catch (err) {
+    console.error("Resend OTP Error:", err);
+    res.status(500).json({ message: "Failed to resend OTP" });
+  }
+};
 
 
-module.exports = { register, login, verifyOTP, forgotPassword, resetPassword};
+
+
+module.exports = { register, login, verifyOTP, forgotPassword, resetPassword, resendOTP};
