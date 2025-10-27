@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-
+const path = require("path");
 const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
 
 
@@ -203,6 +203,7 @@ const forgotPassword = async (req, res) => {
     res.status(500).json({ message: "Failed to resend OTP" });
   }
 };
+
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -214,15 +215,34 @@ const updateProfile = async (req, res) => {
     if (name) user.name = name;
     if (email) user.email = email;
 
+    if (req.file) {
+      if (user.profileImage) {
+        const oldPath = path.join(__dirname, "..", "uploads", user.profileImage);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+
+      user.profileImage = req.file.filename;
+    }
+
     await user.save();
 
     res.json({
       message: "Profile updated successfully",
-      user: { id: user._id, name: user.name, email: user.email },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profileImage: user.profileImage
+          ? `${req.protocol}://${req.get("host")}/uploads/${user.profileImage}`
+          : null,
+      },
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 module.exports = { register, login, verifyOTP, forgotPassword, resetPassword, resendOTP, updateProfile };
 
