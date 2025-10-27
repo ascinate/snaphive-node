@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   otp: { type: String },
   otpExpires: { type: Date },
   isVerified: { type: Boolean, default: false },
+  profileImage: { type: String, default: null },
 });
 
 userSchema.pre("save", async function (next) {
