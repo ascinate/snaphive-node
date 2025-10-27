@@ -205,7 +205,7 @@ const forgotPassword = async (req, res) => {
 };
 const updateProfile = async (req, res) => {
   try {
-    const userId = req.user.id; // from protect middleware (token)
+    const userId = req.user.id;
     const { name, email } = req.body;
 
     const user = await User.findById(userId);
