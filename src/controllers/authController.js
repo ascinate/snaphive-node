@@ -230,19 +230,31 @@ const updateProfile = async (req, res) => {
         expires: "03-09-2491",
       });
 
-      // ✅ safely delete old image if exists
-      if (user.profileImage) {
-        try {
-          const parts = user.profileImage.split("/o/");
-          if (parts[1]) {
-            const oldFilePath = decodeURIComponent(parts[1].split("?")[0]);
-            await bucket.file(oldFilePath).delete({ ignoreNotFound: true });
-            console.log("Old image deleted:", oldFilePath);
-          }
-        } catch (err) {
-          console.log("Old image delete failed:", err.message);
+    if (user.profileImage) {
+      try {
+        let oldFilePath = null;
+        const imageUrl = user.profileImage;
+
+        // ✅ handle old Firebase URL format
+        if (imageUrl.includes("/o/")) {
+          const parts = imageUrl.split("/o/");
+          oldFilePath = decodeURIComponent(parts[1].split("?")[0]);
         }
+        // ✅ handle new Google Cloud Storage URL format
+        else if (imageUrl.includes("/profile_images/")) {
+          const parts = imageUrl.split("/profile_images/");
+          oldFilePath = `profile_images/${parts[1].split("?")[0]}`;
+        }
+
+        if (oldFilePath) {
+          await bucket.file(oldFilePath).delete({ ignoreNotFound: true });
+          console.log("✅ Old image deleted:", oldFilePath);
+        }
+      } catch (err) {
+        console.log("⚠️ Old image delete failed:", err.message);
       }
+    }
+
 
       imageUrl = url;
     }
