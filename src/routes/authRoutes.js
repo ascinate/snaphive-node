@@ -5,7 +5,6 @@ const multer = require("multer");
 const path = require("path");
 
 const router = express.Router();
-
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -15,13 +14,13 @@ const storage = multer.diskStorage({
   },
 });
 
-
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) cb(null, true);
   else cb(new Error("Only image files are allowed"), false);
 };
 
 const upload = multer({ storage, fileFilter });
+
 
 router.post("/register", register);
 router.post("/verify-otp", verifyOTP);

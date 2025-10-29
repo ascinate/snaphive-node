@@ -1,7 +1,8 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const path = require("path");
+const bucket = require("../config/firebase");
+const fs = require("fs");
 const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
 
 
@@ -207,42 +208,57 @@ const forgotPassword = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, email } = req.body;
-
+    const file = req.file;
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (name) user.name = name;
-    if (email) user.email = email;
+    let imageUrl = user.profileImage;
 
-    if (req.file) {
+    if (file) {
+      const localPath = file.path;
+      const destination = `profile_images/${userId}_${Date.now()}_${file.originalname}`;
+
+      await bucket.upload(localPath, {
+        destination,
+        metadata: { contentType: file.mimetype },
+      });
+
+      fs.unlinkSync(localPath);
+
+      const [url] = await bucket.file(destination).getSignedUrl({
+        action: "read",
+        expires: "03-09-2491",
+      });
+
+      // ✅ safely delete old image if exists
       if (user.profileImage) {
-        const oldPath = path.join(__dirname, "..", "uploads", user.profileImage);
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
+        try {
+          const parts = user.profileImage.split("/o/");
+          if (parts[1]) {
+            const oldFilePath = decodeURIComponent(parts[1].split("?")[0]);
+            await bucket.file(oldFilePath).delete({ ignoreNotFound: true });
+            console.log("Old image deleted:", oldFilePath);
+          }
+        } catch (err) {
+          console.log("Old image delete failed:", err.message);
         }
       }
 
-      user.profileImage = req.file.filename;
+      imageUrl = url;
     }
 
-    await user.save();
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+    if (imageUrl) user.profileImage = imageUrl;
 
-    res.json({
-      message: "Profile updated successfully",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        profileImage: user.profileImage
-          ? `${req.protocol}://${req.get("host")}/uploads/${user.profileImage}`
-          : null,
-      },
-    });
+    await user.save();
+    res.json({ success: true, message: "Profile updated successfully", user });
   } catch (err) {
+    console.error("Update profile error:", err);
     res.status(500).json({ message: err.message });
   }
 };
+
 
 module.exports = { register, login, verifyOTP, forgotPassword, resetPassword, resendOTP, updateProfile };
 
