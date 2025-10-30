@@ -206,12 +206,11 @@ const forgotPassword = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    console.log("updateProfile request body:", req.body);
+    console.log("updateProfile body:", req.body);
     console.log("updateProfile user:", req.user);
 
     const userId = req.user?.id;
     if (!userId) {
-      console.log("❌ Missing userId in req.user");
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
@@ -219,7 +218,6 @@ const updateProfile = async (req, res) => {
     const user = await User.findById(userId);
 
     if (!user) {
-      console.log("❌ User not found");
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
@@ -235,8 +233,8 @@ const updateProfile = async (req, res) => {
       user,
     });
   } catch (err) {
-    console.error("🔥 Update profile error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Update profile error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
