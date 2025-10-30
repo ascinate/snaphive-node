@@ -235,12 +235,11 @@ const updateProfile = async (req, res) => {
         let oldFilePath = null;
         const imageUrl = user.profileImage;
 
-        // ✅ handle old Firebase URL format
         if (imageUrl.includes("/o/")) {
           const parts = imageUrl.split("/o/");
           oldFilePath = decodeURIComponent(parts[1].split("?")[0]);
         }
-        // ✅ handle new Google Cloud Storage URL format
+
         else if (imageUrl.includes("/profile_images/")) {
           const parts = imageUrl.split("/profile_images/");
           oldFilePath = `profile_images/${parts[1].split("?")[0]}`;
