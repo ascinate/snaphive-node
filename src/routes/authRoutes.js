@@ -15,16 +15,13 @@ const fs = require("fs");
 
 const router = express.Router();
 
-// ✅ Detect environment (Vercel uses read-only FS except /tmp)
 const uploadDir =
   process.env.VERCEL || process.env.NODE_ENV === "production"
     ? "/tmp/uploads"
     : "uploads";
 
-// ✅ Ensure directory exists
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
-// ✅ Multer storage config
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadDir);
@@ -34,7 +31,7 @@ const storage = multer.diskStorage({
   },
 });
 
-// ✅ Allow only image uploads
+
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) cb(null, true);
   else cb(new Error("Only image files are allowed"), false);
@@ -42,7 +39,6 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
-// ✅ Routes
 router.post("/register", register);
 router.post("/verify-otp", verifyOTP);
 router.post("/login", login);
