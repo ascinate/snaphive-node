@@ -206,12 +206,22 @@ const forgotPassword = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { name, email, profileImage } = req.body;
+    console.log("updateProfile request body:", req.body);
+    console.log("updateProfile user:", req.user);
 
+    const userId = req.user?.id;
+    if (!userId) {
+      console.log("❌ Missing userId in req.user");
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const { name, email, profileImage } = req.body;
     const user = await User.findById(userId);
-    if (!user)
+
+    if (!user) {
+      console.log("❌ User not found");
       return res.status(404).json({ success: false, message: "User not found" });
+    }
 
     if (name) user.name = name;
     if (email) user.email = email;
@@ -219,21 +229,14 @@ const updateProfile = async (req, res) => {
 
     await user.save();
 
-    return res.json({
+    res.json({
       success: true,
       message: "Profile updated successfully",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        profileImage: user.profileImage,
-      },
+      user,
     });
   } catch (err) {
-    console.error("Update profile error:", err);
-    return res
-      .status(500)
-      .json({ success: false, message: "Server error, please try again later" });
+    console.error("🔥 Update profile error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
