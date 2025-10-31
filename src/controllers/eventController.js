@@ -18,16 +18,12 @@ const createEvent = async (req, res) => {
         const localPath = file.path;
         const destination = `event_images/${userId}_${Date.now()}_${file.originalname}`;
 
-        // ✅ Upload to Firebase
         await bucket.upload(localPath, {
           destination,
           metadata: { contentType: file.mimetype },
         });
 
-        // ✅ Delete local file
         fs.unlinkSync(localPath);
-
-        // ✅ Get public signed URL
         const [url] = await bucket.file(destination).getSignedUrl({
           action: "read",
           expires: "03-09-2491",
@@ -37,7 +33,6 @@ const createEvent = async (req, res) => {
       }
     }
 
-    // ✅ Save event in Mongo
     const newEvent = await Event.create({
       user: userId,
       eventName,
