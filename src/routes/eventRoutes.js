@@ -37,6 +37,6 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ storage, fileFilter });
 
 router.post("/", protect, upload.array("images", 10), createEvent);
-router.get("/", getEvents);
+router.get("/", protect, getEvents);
 
 module.exports = router;
