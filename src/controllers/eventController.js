@@ -1,19 +1,37 @@
 const Event = require("../models/Event");
 
+// ✅ Create Event
 exports.createEvent = async (req, res) => {
   try {
-    const userId = req.user.id; // From JWT middleware
-    const { eventName, eventType, images } = req.body;
+    const userId = req.user.id;
+    const { eventName, eventType } = req.body;
+    let imageUrls = [];
 
-    if (!eventName || !eventType || !images || images.length === 0) {
-      return res.status(400).json({ success: false, message: "All fields required" });
+    // If using multer upload
+    if (req.files && req.files.length > 0) {
+      imageUrls = req.files.map((file) => {
+        return process.env.VERCEL
+          ? `https://${req.headers.host}/uploads/${file.filename}`
+          : `http://localhost:4000/uploads/${file.filename}`;
+      });
+    } else if (req.body.images) {
+      // In case frontend sends Firebase URLs directly
+      imageUrls = Array.isArray(req.body.images)
+        ? req.body.images
+        : [req.body.images];
+    }
+
+    if (!eventName || !eventType || imageUrls.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
     }
 
     const newEvent = new Event({
       user: userId,
       eventName,
       eventType,
-      images,
+      images: imageUrls,
     });
 
     await newEvent.save();
@@ -25,12 +43,15 @@ exports.createEvent = async (req, res) => {
   }
 };
 
+// ✅ Fetch All Events
 exports.getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find().populate("user", "name email profileImage");
+    const events = await Event.find()
+      .populate("user", "name email profileImage")
+      .sort({ createdAt: -1 });
     res.json({ success: true, events });
   } catch (err) {
-    console.error("Fetch Events Error:", err);
+    console.error("Get Events Error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
