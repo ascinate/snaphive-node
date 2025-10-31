@@ -1,12 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { createEvent, getAllEvents } = require("../controllers/eventController");
+const { createEvent, getEvents } = require("../controllers/eventController");
 const protect = require("../middleware/authMiddleware");
 const multer = require("multer");
-const path = require("path");
 const fs = require("fs");
+const path = require("path");
 
-// Same upload logic as authRoutes
 const uploadDir =
   process.env.VERCEL || process.env.NODE_ENV === "production"
     ? "/tmp/uploads"
@@ -30,10 +29,7 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
-// Create Event (multi image upload supported)
 router.post("/", protect, upload.array("images", 10), createEvent);
-
-// Get All Events
-router.get("/", getAllEvents);
+router.get("/", getEvents);
 
 module.exports = router;
