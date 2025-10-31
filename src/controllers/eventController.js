@@ -49,7 +49,8 @@ const createEvent = async (req, res) => {
 
 const getEvents = async (req, res) => {
   try {
-    const events = await Event.find()
+     const userId = req.user.id;
+    const events = await Event.find({ user:userId })
       .populate("user", "name email profileImage")
       .sort({ createdAt: -1 });
 
