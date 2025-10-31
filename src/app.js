@@ -27,10 +27,14 @@ app.use("/api/auth", authRoutes);
 
 app.use("/api/events", eventRoutes);
 
-
 app.get("/", (req, res) => {
   res.send("SnapHive API running...");
 });
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.use((err, req, res, next) => {
+  console.error("🔥 Server Error:", err);
+  res.status(500).json({ message: err.message, stack: err.stack });
+});
+
