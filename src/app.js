@@ -6,6 +6,8 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const eventRoutes = require("./routes/eventRoutes");
+const hiveRoutes = require("./routes/hiveRoutes");
+
 const path = require("path");
 
 const app = express();
@@ -24,8 +26,8 @@ app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
 connectDB();
 
 app.use("/api/auth", authRoutes);
-
 app.use("/api/events", eventRoutes);
+app.use("/api/hives", hiveRoutes);
 
 app.get("/", (req, res) => {
   res.send("SnapHive API running...");
