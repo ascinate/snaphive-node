@@ -1,50 +1,26 @@
+
 const mongoose = require("mongoose");
 
 const hiveSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  description: String,
-  cover_photo: String,
-  type: {
-    type: String,
-    enum: ["temporary", "permanent"],
-    default: "permanent",
-  },
-  privacy: {
-    type: String,
-    enum: ["public", "private", "invite_only"],
-    default: "private",
-  },
-  created_by: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
-  created_at: { type: Date, default: Date.now },
-  expires_at: Date,
-  mood_theme: {
-    type: String,
-    enum: ["vintage", "energetic", "serene", "neutral"],
-  },
-  location: {
-    lat: Number,
-    lng: Number,
-  },
-  member_count: { type: Number, default: 1 },
-  ai_mosaic_url: String,
-  ai_story_url: String,
-  status: {
-    type: String,
-    enum: ["active", "archived", "locked"],
-    default: "active",
-  },
-  members: [
-    {
-      user_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
-      role: {
-        type: String,
-        enum: ["admin", "member"],
-        default: "member",
-      },
-      joined_at: { type: Date, default: Date.now },
-      approved: { type: Boolean, default: true },
-    },
-  ],
-});
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  hiveName: { type: String, required: true },
+  description: { type: String },
+  privacyMode: { type: String, enum: ["automatic", "approval"], default: "automatic" },
+  isTemporary: { type: Boolean, default: false },
+  eventDate: { type: Date },
+  startTime: { type: String },
+  endTime: { type: String },
+  expiryDate: { type: Date },
+  coverImage: { type: String, default: null },
+  isExpired: { type: Boolean, default: false },
+}, { timestamps: true });
 
-module.exports = mongoose.model("hives", hiveSchema);
+
+hiveSchema.methods.checkExpiry = function () {
+  if (this.isTemporary && this.expiryDate && new Date() > new Date(this.expiryDate)) {
+    this.isExpired = true;
+  }
+};
+
+module.exports = mongoose.model("Hive", hiveSchema);
+
