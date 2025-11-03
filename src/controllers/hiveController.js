@@ -61,6 +61,21 @@ const createHive = async (req, res) => {
 };
 
 
+// helpers
+function parseEndTimeTo24(endTimeStr) {
+  if (!endTimeStr) return null;
+  // expected format: "06:30 PM" or "6:30 PM" or "06:30AM"
+  const parts = endTimeStr.trim().match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
+  if (!parts) return null;
+  let hours = parseInt(parts[1], 10);
+  const minutes = parseInt(parts[2], 10);
+  const meridian = parts[3].toLowerCase();
+  if (meridian === "pm" && hours !== 12) hours += 12;
+  if (meridian === "am" && hours === 12) hours = 0;
+  return { hours, minutes };
+}
+
+// getUserHives - robust local-time expiry calculation
 const getUserHives = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -69,33 +84,48 @@ const getUserHives = async (req, res) => {
     const now = new Date();
 
     for (const hive of hives) {
-      if (hive.isTemporary && hive.expiryDate) {
-        let expiryDateTime = new Date(hive.expiryDate);
+      if (!hive.isTemporary || !hive.expiryDate) continue;
 
-        if (hive.endTime) {
-          const [time, meridian] = hive.endTime.split(" ");
-          let [hours, minutes] = time.split(":").map(Number);
+      // parse date parts from the expiryDate (use UTC date parts to get the intended calendar date)
+      const d = new Date(hive.expiryDate);
+      const year = d.getUTCFullYear();
+      const month = d.getUTCMonth(); // 0-based
+      const day = d.getUTCDate();
 
-          if (meridian.toLowerCase() === "pm" && hours !== 12) hours += 12;
-          if (meridian.toLowerCase() === "am" && hours === 12) hours = 0;
+      // default expiry datetime is at 00:00 local of that date
+      let expiryDateTime = new Date(year, month, day, 0, 0, 0);
 
-          expiryDateTime.setHours(hours);
-          expiryDateTime.setMinutes(minutes);
-          expiryDateTime.setSeconds(0);
+      // if endTime exists, merge it (converted to 24-hour) into the expiry timestamp (local timezone)
+      if (hive.endTime) {
+        const tm = parseEndTimeTo24(hive.endTime);
+        if (tm) {
+          expiryDateTime = new Date(year, month, day, tm.hours, tm.minutes, 0);
         }
+      }
 
-        // Mark expired only if both date+time are passed
-        if (now > expiryDateTime && !hive.isExpired) {
-          hive.isExpired = true;
-          await hive.save();
-        }
+      // Debug logs (remove in production)
+      console.log("Hive id:", hive._id);
+      console.log("Stored expiryDate (raw):", hive.expiryDate);
+      console.log("Computed expiryDateTime (local):", expiryDateTime.toString());
+      console.log("Now (local):", now.toString());
+
+      // Mark expired only if both date+time are passed
+      if (now > expiryDateTime && !hive.isExpired) {
+        hive.isExpired = true;
+        await hive.save();
+      } else if (now <= expiryDateTime && hive.isExpired) {
+        // optional: unmark if expiry moved to future
+        hive.isExpired = false;
+        await hive.save();
       }
     }
 
     res.status(200).json({ success: true, hives });
   } catch (err) {
+    console.error("Error fetching user hives:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
 
 module.exports = { createHive, getUserHives };
