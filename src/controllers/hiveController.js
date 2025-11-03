@@ -16,10 +16,7 @@ const createHive = async (req, res) => {
       expiryDate,
     } = req.body;
 
-    if (!hiveName)
-      return res
-        .status(400)
-        .json({ success: false, message: "Hive name is required" });
+    if (!hiveName) return res.status(400).json({ success: false, message: "Hive name is required" });
 
     let coverImageUrl = null;
     const file = req.file;
@@ -43,29 +40,6 @@ const createHive = async (req, res) => {
       coverImageUrl = url;
     }
 
-    let isExpired = false;
-    const now = new Date();
-
-    if (isTemporary) {
-
-      if (expiryDate && now > new Date(expiryDate)) {
-        isExpired = true;
-      }
-
-      if (eventDate && endTime) {
-        const eventDateObj = new Date(eventDate);
-        const [time, meridian] = endTime.split(" ");
-        let [hours, minutes] = time.split(":").map(Number);
-        if (meridian?.toLowerCase() === "pm" && hours < 12) hours += 12;
-        if (meridian?.toLowerCase() === "am" && hours === 12) hours = 0;
-
-        eventDateObj.setHours(hours, minutes, 0, 0);
-
-        if (now > eventDateObj) {
-          isExpired = true;
-        }
-      }
-    }
     const hive = await Hive.create({
       user: userId,
       hiveName,
@@ -77,7 +51,6 @@ const createHive = async (req, res) => {
       endTime,
       expiryDate,
       coverImage: coverImageUrl,
-      isExpired,
     });
 
     res.status(201).json({ success: true, data: hive });
@@ -96,28 +69,23 @@ const getUserHives = async (req, res) => {
     const now = new Date();
 
     for (const hive of hives) {
-      if (hive.isTemporary) {
-        let expireCondition = false;
+      if (hive.isTemporary && hive.expiryDate) {
+        let expiryDateTime = new Date(hive.expiryDate);
 
-        if (hive.expiryDate && now > hive.expiryDate) {
-          expireCondition = true;
-        }
-
-        if (hive.eventDate && hive.endTime) {
-          const eventEndDateTime = new Date(hive.eventDate);
+        if (hive.endTime) {
           const [time, meridian] = hive.endTime.split(" ");
           let [hours, minutes] = time.split(":").map(Number);
-          if (meridian?.toLowerCase() === "pm" && hours < 12) hours += 12;
-          if (meridian?.toLowerCase() === "am" && hours === 12) hours = 0;
 
-          eventEndDateTime.setHours(hours, minutes, 0, 0);
+          if (meridian.toLowerCase() === "pm" && hours !== 12) hours += 12;
+          if (meridian.toLowerCase() === "am" && hours === 12) hours = 0;
 
-          if (now > eventEndDateTime) {
-            expireCondition = true;
-          }
+          expiryDateTime.setHours(hours);
+          expiryDateTime.setMinutes(minutes);
+          expiryDateTime.setSeconds(0);
         }
 
-        if (expireCondition && !hive.isExpired) {
+        // Mark expired only if both date+time are passed
+        if (now > expiryDateTime && !hive.isExpired) {
           hive.isExpired = true;
           await hive.save();
         }
@@ -126,7 +94,6 @@ const getUserHives = async (req, res) => {
 
     res.status(200).json({ success: true, hives });
   } catch (err) {
-    console.error("Error fetching user hives:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
