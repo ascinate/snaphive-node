@@ -12,6 +12,7 @@ const hiveSchema = new mongoose.Schema({
   endTime: { type: String },
   expiryDate: { type: Date },
   coverImage: { type: String, default: null },
+  images: { type: [String], default: [] },
   isExpired: { type: Boolean, default: false },
 }, { timestamps: true });
 

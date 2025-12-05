@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createHive, getUserHives } = require("../controllers/hiveController");
+const { createHive, getUserHives, uploadHiveImages } = require("../controllers/hiveController");
 const protect = require("../middleware/authMiddleware");
 const multer = require("multer");
 const fs = require("fs");
@@ -21,5 +21,12 @@ const upload = multer({ storage });
 
 router.post("/", protect, upload.single("coverImage"), createHive);
 router.get("/", protect, getUserHives);
+router.post(
+    "/:hiveId/images",
+    protect,
+    upload.array("images", 10),
+    uploadHiveImages
+);
+
 
 module.exports = router;
