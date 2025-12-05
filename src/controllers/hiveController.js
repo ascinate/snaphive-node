@@ -97,4 +97,59 @@ const getUserHives = async (req, res) => {
   }
 };
 
-module.exports = { createHive, getUserHives };
+const uploadHiveImages = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const hiveId = req.params.hiveId;
+
+    const hive = await Hive.findOne({ _id: hiveId, user: userId });
+    if (!hive) {
+      return res.status(404).json({ success: false, message: "Hive not found" });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: "No images uploaded" });
+    }
+
+    const timestamp = Date.now(); // 🔥 FIX
+    let uploadedImages = [];
+
+
+    for (const file of req.files) {
+      const localPath = file.path;
+      const destination = `hive_images/${userId}_${timestamp}_${file.originalname}`;
+
+      console.log("Bucket name:", bucket.name); // ✔ correct
+
+      await bucket.upload(localPath, {
+        destination,
+        metadata: { contentType: file.mimetype },
+      });
+
+      fs.unlinkSync(localPath);
+
+      const [url] = await bucket.file(destination).getSignedUrl({
+        action: "read",
+        expires: "03-09-2491",
+      });
+
+      uploadedImages.push(url);
+    }
+
+
+    hive.images.push(...uploadedImages);
+    await hive.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Images uploaded successfully",
+      images: hive.images,
+    });
+
+  } catch (err) {
+    console.error("Image upload error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { createHive, getUserHives, uploadHiveImages };
