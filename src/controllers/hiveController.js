@@ -140,4 +140,68 @@ const getUserHives = async (req, res) => {
   }
 };
 
-module.exports = { createHive, getUserHives };
+const addImages = async (req, res) => {
+  try {
+    const hiveId = req.params.hiveId;
+    const userId = req.user.id;
+
+    // Check if hive exists
+    const hive = await Hive.findById(hiveId);
+    if (!hive) {
+      return res.status(404).json({ success: false, message: "Hive not found" });
+    }
+
+    // Validate that some files were uploaded
+    const files = req.files;
+    if (!files || files.length === 0) {
+      return res.status(400).json({ success: false, message: "No images uploaded" });
+    }
+
+    const uploadedUrls = [];
+
+    // Upload each file to Firebase storage
+    for (const file of files) {
+      const localPath = file.path;
+      const destination = `hive_images/${userId}_${Date.now()}_${file.originalname}`;
+
+      // Upload to Firebase bucket
+      await bucket.upload(localPath, {
+        destination,
+        metadata: { contentType: file.mimetype },
+      });
+
+      // Delete temp file
+      fs.unlinkSync(localPath);
+
+      // Generate signed URL for read access
+      const [url] = await bucket.file(destination).getSignedUrl({
+        action: "read",
+        expires: "03-09-2491",
+      });
+
+      uploadedUrls.push(url);
+    }
+
+    // Push images to hive.images array
+    const updatedHive = await Hive.findByIdAndUpdate(
+      hiveId,
+      {
+        $push: { images: { $each: uploadedUrls } }
+      },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Images added successfully",
+      data: updatedHive
+    });
+
+  } catch (err) {
+    console.error("Add images error:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
+module.exports = { createHive, getUserHives, addImages };
