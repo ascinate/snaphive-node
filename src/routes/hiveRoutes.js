@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const protect = require("../middleware/authMiddleware");
-const { createHive, getUserHives, uploadHiveImages } = require("../controllers/hiveController");
+const { createHive, getUserHives, uploadHiveImages, inviteMemberByEmail, acceptHiveInvite } = require("../controllers/hiveController");
 
 // Use memory storage for Vercel + Firebase
 const upload = multer({
