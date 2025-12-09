@@ -7,6 +7,7 @@ const User = require("../models/User");
 const createHive = async (req, res) => {
   try {
     const userId = req.user.id;
+
     const {
       hiveName,
       description,
@@ -18,22 +19,53 @@ const createHive = async (req, res) => {
       expiryDate,
     } = req.body;
 
-    if (!hiveName) return res.status(400).json({ success: false, message: "Hive name is required" });
+    if (!hiveName) {
+      return res.status(400).json({
+        success: false,
+        message: "Hive name is required",
+      });
+    }
+
+    // -----------------------------------------
+    // 📌 MULTER FILE CHECK
+    // -----------------------------------------
+    if (!req.file) {
+      console.log("⚠ No file uploaded");
+    }
 
     let coverImageUrl = null;
-    const file = req.file;
 
-    if (file) {
+    // -----------------------------------------
+    // 📌 Upload to Firebase if file exists
+    // -----------------------------------------
+    if (req.file) {
+      const file = req.file;
+
+      if (!file.path) {
+        return res.status(400).json({
+          success: false,
+          message: "Image file path missing",
+        });
+      }
+
       const localPath = file.path;
       const destination = `hive_covers/${userId}_${Date.now()}_${file.originalname}`;
+
+      console.log("Uploading to Firebase:", localPath);
 
       await bucket.upload(localPath, {
         destination,
         metadata: { contentType: file.mimetype },
       });
 
-      fs.unlinkSync(localPath);
+      // remove local file
+      try {
+        fs.unlinkSync(localPath);
+      } catch (e) {
+        console.log("⚠ Could not delete temp file:", e.message);
+      }
 
+      // Create public signed URL
       const [url] = await bucket.file(destination).getSignedUrl({
         action: "read",
         expires: "03-09-2491",
@@ -42,6 +74,9 @@ const createHive = async (req, res) => {
       coverImageUrl = url;
     }
 
+    // -----------------------------------------
+    // 📌 Create Hive in DB
+    // -----------------------------------------
     const hive = await Hive.create({
       user: userId,
       hiveName,
@@ -55,10 +90,14 @@ const createHive = async (req, res) => {
       coverImage: coverImageUrl,
     });
 
-    res.status(201).json({ success: true, data: hive });
+    return res.status(201).json({
+      success: true,
+      data: hive,
+    });
+
   } catch (err) {
-    console.error("Create hive error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    console.error("❌ Create hive error:", err);
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
 
