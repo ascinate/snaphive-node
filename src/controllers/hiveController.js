@@ -7,7 +7,6 @@ const User = require("../models/User");
 const createHive = async (req, res) => {
   try {
     const userId = req.user.id;
-
     const {
       hiveName,
       description,
@@ -19,90 +18,50 @@ const createHive = async (req, res) => {
       expiryDate,
     } = req.body;
 
-    if (!hiveName) {
-      return res.status(400).json({
-        success: false,
-        message: "Hive name is required",
+    if (!hiveName) return res.status(400).json({ success: false, message: "Hive name is required" });
+
+    let coverImageUrl = null;
+    const file = req.file;
+
+    if (file) {
+      const localPath = file.path;
+      const destination = `hive_covers/${userId}_${Date.now()}_${file.originalname}`;
+
+      await bucket.upload(localPath, {
+        destination,
+        metadata: { contentType: file.mimetype },
       });
+
+      fs.unlinkSync(localPath);
+
+      const [url] = await bucket.file(destination).getSignedUrl({
+        action: "read",
+        expires: "03-09-2491",
+      });
+
+      coverImageUrl = url;
     }
 
-    // ---------------------------------------
-    // 🔥 Handle File Upload (coverImage)
-    // ---------------------------------------
-    let coverImageURL = null;
+    const hive = await Hive.create({
+      user: userId,
+      hiveName,
+      description,
+      privacyMode,
+      isTemporary,
+      eventDate,
+      startTime,
+      endTime,
+      expiryDate,
+      coverImage: coverImageUrl,
+    });
 
-    if (req.file) {
-      const filename = `hives/${Date.now()}-${uuidv4()}.jpg`;
-      const file = bucket.file(filename);
-
-      const stream = file.createWriteStream({
-        metadata: {
-          contentType: req.file.mimetype,
-        },
-      });
-
-      stream.on("error", (err) => {
-        console.error("Firebase upload error:", err);
-        return res.status(500).json({
-          success: false,
-          message: "Image upload failed",
-        });
-      });
-
-      stream.on("finish", async () => {
-        // Make file publicly accessible
-        await file.makePublic();
-
-        // Public download URL
-        coverImageURL = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-
-        // After upload finished, save hive
-        const hive = await Hive.create({
-          user: userId,
-          hiveName,
-          description,
-          privacyMode,
-          isTemporary,
-          eventDate,
-          startTime,
-          endTime,
-          expiryDate,
-          coverImage: coverImageURL,
-        });
-
-        return res.status(201).json({
-          success: true,
-          data: hive,
-        });
-      });
-
-      // Upload buffer
-      stream.end(req.file.buffer);
-    } else {
-      // If no file is uploaded
-      const hive = await Hive.create({
-        user: userId,
-        hiveName,
-        description,
-        privacyMode,
-        isTemporary,
-        eventDate,
-        startTime,
-        endTime,
-        expiryDate,
-        coverImage: null,
-      });
-
-      return res.status(201).json({
-        success: true,
-        data: hive,
-      });
-    }
+    res.status(201).json({ success: true, data: hive });
   } catch (err) {
     console.error("Create hive error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
 
 
 const getUserHives = async (req, res) => {
