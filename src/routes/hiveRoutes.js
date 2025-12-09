@@ -1,28 +1,19 @@
 const express = require("express");
 const router = express.Router();
-const { createHive, getUserHives, uploadHiveImages, getHiveById, inviteMemberByEmail, acceptHiveInvite } = require("../controllers/hiveController");
-const protect = require("../middleware/authMiddleware");
 const multer = require("multer");
-const fs = require("fs");
+const protect = require("../middleware/authMiddleware");
+const { createHive, getUserHives, uploadHiveImages } = require("../controllers/hiveController");
 
-const uploadDir =
-    process.env.VERCEL || process.env.NODE_ENV === "production"
-        ? "/tmp/uploads"
-        : "uploads";
-
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
+// Use memory storage for Vercel + Firebase
 const upload = multer({
-
     storage: multer.memoryStorage(),
-
     limits: { fileSize: 10 * 1024 * 1024 },
-
 });
 
 router.post("/", protect, upload.single("coverImage"), createHive);
+
 router.get("/", protect, getUserHives);
-router.get("/:hiveId", protect, getHiveById);
+
 router.post(
     "/:hiveId/images",
     protect,
