@@ -19,7 +19,7 @@ try {
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    storageBucket: "snaphive-81e25.firebasestorage.app",
+    storageBucket: process.env.FIREBASE_BUCKET || "snaphive-81e25.appspot.com",
   });
 }
 
