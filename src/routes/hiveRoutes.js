@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
+const { createHive, getUserHives } = require("../controllers/hiveController");
+const protect = require("../middleware/authMiddleware");
 const multer = require("multer");
 const fs = require("fs");
-const protect = require("../middleware/authMiddleware");
-const { createHive, getUserHives, uploadHiveImages, inviteMemberByEmail, acceptHiveInvite, getHiveById } = require("../controllers/hiveController");
 
 const uploadDir =
     process.env.VERCEL || process.env.NODE_ENV === "production"
@@ -21,16 +21,5 @@ const upload = multer({ storage });
 
 router.post("/", protect, upload.single("coverImage"), createHive);
 router.get("/", protect, getUserHives);
-
-
-router.get("/:hiveId", protect, getHiveById);
-router.post(
-    "/:hiveId/images",
-    protect,
-    upload.array("images", 10),
-    uploadHiveImages
-);
-router.post("/:hiveId/invite", protect, inviteMemberByEmail);
-router.post("/:hiveId/accept", protect, acceptHiveInvite);
 
 module.exports = router;
