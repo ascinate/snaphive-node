@@ -18,14 +18,20 @@ const createHive = async (req, res) => {
       expiryDate,
     } = req.body;
 
-    if (!hiveName) return res.status(400).json({ success: false, message: "Hive name is required" });
+    if (!hiveName) {
+      return res.status(400).json({ success: false, message: "Hive name is required" });
+    }
 
     let coverImageUrl = null;
-    const file = req.file;
 
-    if (file) {
+    // ✅ SAME upload logic style as uploadHiveImages
+    if (req.file) {
+      const file = req.file;
+      const timestamp = Date.now();
       const localPath = file.path;
-      const destination = `hive_covers/${userId}_${Date.now()}_${file.originalname}`;
+      const destination = `hive_covers/${userId}_${timestamp}_${file.originalname}`;
+
+      console.log("Bucket name:", bucket.name);
 
       await bucket.upload(localPath, {
         destination,
@@ -42,6 +48,7 @@ const createHive = async (req, res) => {
       coverImageUrl = url;
     }
 
+    // ✅ Create hive AFTER upload (important)
     const hive = await Hive.create({
       user: userId,
       hiveName,
@@ -55,14 +62,17 @@ const createHive = async (req, res) => {
       coverImage: coverImageUrl,
     });
 
-    res.status(201).json({ success: true, data: hive });
+    res.status(201).json({
+      success: true,
+      message: "Hive created successfully",
+      data: hive,
+    });
+
   } catch (err) {
     console.error("Create hive error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
-
-
 
 const getUserHives = async (req, res) => {
   try {
