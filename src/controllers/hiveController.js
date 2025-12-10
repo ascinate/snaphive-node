@@ -245,21 +245,36 @@ const inviteMemberByEmail = async (req, res) => {
       });
     }
 
+    // Check if the user exists
     const invitedUser = await User.findOne({ email });
-    if (!invitedUser) {
-      return res.status(404).json({
-        success: false,
-        message: "User with this email does not exist",
-      });
-    }
+    const memberId = invitedUser ? invitedUser._id : null;
 
-    if (hive.members && hive.members.includes(invitedUser._id)) {
+    // Check if already invited
+    const alreadyInvited = hive.members.some(
+      (m) => (m.memberId && m.memberId.equals(memberId)) || m.email === email
+    );
+    if (alreadyInvited) {
       return res.status(400).json({
         success: false,
-        message: "User is already a hive member",
+        message: "User is already invited or a hive member",
       });
     }
 
+    // Add to hive members
+    const now = new Date();
+    const expiryDate = new Date(now);
+    expiryDate.setMonth(expiryDate.getMonth() + 1);
+
+    hive.members.push({
+      memberId,
+      email,
+      status: "pending",
+      expiryDate,
+    });
+
+    await hive.save();
+
+    // Send invitation email
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -267,6 +282,8 @@ const inviteMemberByEmail = async (req, res) => {
         pass: process.env.EMAIL_PASS,
       },
     });
+
+    const acceptUrl = `${req.protocol}://${req.get("host")}/api/hives/${hive._id}/accept-request?email=${email}`;
 
     const inviteHTML = `
       <div style="font-family:sans-serif;line-height:1.6">
@@ -283,7 +300,7 @@ const inviteMemberByEmail = async (req, res) => {
         <p>Login to SnapHive to accept this invitation.</p>
 
         <div style="margin:20px 0;">
-          <a href="#"
+          <a href="${acceptUrl}"
             style="
               display:inline-block;
               padding:10px 18px;
@@ -312,10 +329,9 @@ const inviteMemberByEmail = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Invitation email sent successfully",
-      invitedUserId: invitedUser._id,
+      message: "Invitation email sent and member added successfully",
+      member: { memberId, email, status: "pending", expiryDate },
     });
-
   } catch (err) {
     console.error("Invite mail error:", err);
     res.status(500).json({
@@ -328,6 +344,7 @@ const inviteMemberByEmail = async (req, res) => {
 const acceptHiveInvite = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userEmail = req.user.email;
     const { hiveId } = req.params;
 
     const hive = await Hive.findById(hiveId);
@@ -338,14 +355,40 @@ const acceptHiveInvite = async (req, res) => {
       });
     }
 
-    if (hive.members && hive.members.includes(userId)) {
+    // Find member invite (by email or memberId)
+    const member = hive.members.find(
+      (m) =>
+        (m.memberId && m.memberId.toString() === userId) ||
+        m.email === userEmail
+    );
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: "No invitation found for this user",
+      });
+    }
+
+    // Already accepted
+    if (member.status === "accepted") {
       return res.status(400).json({
         success: false,
         message: "You are already a member of this hive",
       });
     }
 
-    hive.members.push(userId);
+    // Check expiry
+    if (member.expiryDate && new Date() > new Date(member.expiryDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invitation has expired",
+      });
+    }
+
+    // Accept invitation
+    member.status = "accepted";
+    member.memberId = userId; // attach userId if not set
+
     await hive.save();
 
     res.status(200).json({
@@ -362,4 +405,82 @@ const acceptHiveInvite = async (req, res) => {
   }
 };
 
-module.exports = { createHive, getUserHives, uploadHiveImages, getHiveById, inviteMemberByEmail, acceptHiveInvite };
+const acceptHiveInviteByEmail = async (req, res) => {
+  try {
+    const { hiveId } = req.params;
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const hive = await Hive.findById(hiveId);
+    if (!hive) {
+      return res.status(404).json({
+        success: false,
+        message: "Hive not found",
+      });
+    }
+
+    // Find the invited member by email
+    const member = hive.members.find((m) => m.email === email);
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: "Invitation not found for this email",
+      });
+    }
+
+    // Already accepted
+    if (member.status === "accepted") {
+      return res.status(400).json({
+        success: false,
+        message: "Invitation already accepted",
+      });
+    }
+
+    // Check expiry
+    if (member.expiryDate && new Date() > new Date(member.expiryDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invitation has expired",
+      });
+    }
+
+    // Check if user exists now
+    const user = await User.findOne({ email });
+    if (user) {
+      member.memberId = user._id;
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Accept invitation
+    member.status = "accepted";
+
+    await hive.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Hive invitation accepted successfully",
+      hiveId: hive._id,
+      email,
+    });
+  } catch (err) {
+    console.error("Accept invite by email error:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+
+module.exports = { createHive, getUserHives, uploadHiveImages, getHiveById, inviteMemberByEmail, acceptHiveInvite, acceptHiveInviteByEmail };
