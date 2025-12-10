@@ -17,7 +17,12 @@ const storage = multer.diskStorage({
     filename: (req, file, cb) => cb(null, Date.now() + "_" + file.originalname),
 });
 
-const upload = multer({ storage });
+const upload = multer({
+    storage,
+    limits: {
+        fileSize: 10 * 1024 * 1024, // ✅ 4 MB
+    },
+});
 
 router.post("/", protect, upload.single("coverImage"), createHive);
 router.get("/", protect, getUserHives);
@@ -32,5 +37,16 @@ router.post(
 );
 router.post("/:hiveId/invite", protect, inviteMemberByEmail);
 router.post("/:hiveId/accept", protect, acceptHiveInvite);
+
+router.use((err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        return res.status(400).json({
+            success: false,
+            message: err.message,
+        });
+    }
+    next(err);
+});
+
 
 module.exports = router;
