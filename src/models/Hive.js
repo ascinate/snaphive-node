@@ -13,7 +13,20 @@ const hiveSchema = new mongoose.Schema({
   expiryDate: { type: Date },
   coverImage: { type: String, default: null },
   images: { type: [String], default: [] },
-  members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  members: [
+    {
+      memberId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+      email: { type: String, required: true },
+      status: { type: String, enum: ["pending", "accepted"], default: "pending" },
+      expiryDate: {
+        type: Date, default: function () {
+          const now = new Date();
+          now.setMonth(now.getMonth() + 1);
+          return now;
+        },
+      },
+    },
+  ],
   isExpired: { type: Boolean, default: false },
 }, { timestamps: true });
 
