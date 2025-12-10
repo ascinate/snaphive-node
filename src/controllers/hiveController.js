@@ -1,6 +1,5 @@
 const Hive = require("../models/Hive");
 const bucket = require("../config/firebase");
-const fs = require("fs");
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
 
@@ -24,23 +23,27 @@ const createHive = async (req, res) => {
 
     let coverImageUrl = null;
 
-    // ✅ SAME upload logic style as uploadHiveImages
+    // ✅ Stream directly to Firebase (no disk storage)
     if (req.file) {
       const file = req.file;
       const timestamp = Date.now();
-      const localPath = file.path;
       const destination = `hive_covers/${userId}_${timestamp}_${file.originalname}`;
 
-      console.log("Bucket name:", bucket.name);
-
-      await bucket.upload(localPath, {
-        destination,
-        metadata: { contentType: file.mimetype },
+      const blob = bucket.file(destination);
+      const blobStream = blob.createWriteStream({
+        metadata: {
+          contentType: file.mimetype,
+        },
       });
 
-      fs.unlinkSync(localPath);
+      // ✅ Upload from buffer instead of disk
+      await new Promise((resolve, reject) => {
+        blobStream.on('error', reject);
+        blobStream.on('finish', resolve);
+        blobStream.end(file.buffer);
+      });
 
-      const [url] = await bucket.file(destination).getSignedUrl({
+      const [url] = await blob.getSignedUrl({
         action: "read",
         expires: "03-09-2491",
       });
@@ -48,7 +51,6 @@ const createHive = async (req, res) => {
       coverImageUrl = url;
     }
 
-    // ✅ Create hive AFTER upload (important)
     const hive = await Hive.create({
       user: userId,
       hiveName,
@@ -74,6 +76,67 @@ const createHive = async (req, res) => {
   }
 };
 
+const uploadHiveImages = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const hiveId = req.params.hiveId;
+
+    const hive = await Hive.findOne({ _id: hiveId, user: userId });
+    if (!hive) {
+      return res.status(404).json({ success: false, message: "Hive not found" });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: "No images uploaded" });
+    }
+
+    const timestamp = Date.now();
+    let uploadedImages = [];
+
+    // ✅ Process uploads in parallel for better performance
+    const uploadPromises = req.files.map(async (file) => {
+      const destination = `hive_images/${userId}_${timestamp}_${file.originalname}`;
+
+      const blob = bucket.file(destination);
+      const blobStream = blob.createWriteStream({
+        metadata: {
+          contentType: file.mimetype,
+        },
+      });
+
+      // ✅ Stream from buffer
+      await new Promise((resolve, reject) => {
+        blobStream.on('error', reject);
+        blobStream.on('finish', resolve);
+        blobStream.end(file.buffer);
+      });
+
+      const [url] = await blob.getSignedUrl({
+        action: "read",
+        expires: "03-09-2491",
+      });
+
+      return url;
+    });
+
+    uploadedImages = await Promise.all(uploadPromises);
+
+    hive.images.push(...uploadedImages);
+    await hive.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Images uploaded successfully",
+      images: hive.images,
+    });
+
+  } catch (err) {
+    console.error("Image upload error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Keep other functions as they are...
 const getUserHives = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -110,61 +173,6 @@ const getUserHives = async (req, res) => {
   }
 };
 
-const uploadHiveImages = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const hiveId = req.params.hiveId;
-
-    const hive = await Hive.findOne({ _id: hiveId, user: userId });
-    if (!hive) {
-      return res.status(404).json({ success: false, message: "Hive not found" });
-    }
-
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ success: false, message: "No images uploaded" });
-    }
-
-    const timestamp = Date.now(); // 🔥 FIX
-    let uploadedImages = [];
-
-
-    for (const file of req.files) {
-      const localPath = file.path;
-      const destination = `hive_images/${userId}_${timestamp}_${file.originalname}`;
-
-      console.log("Bucket name:", bucket.name); // ✔ correct
-
-      await bucket.upload(localPath, {
-        destination,
-        metadata: { contentType: file.mimetype },
-      });
-
-      fs.unlinkSync(localPath);
-
-      const [url] = await bucket.file(destination).getSignedUrl({
-        action: "read",
-        expires: "03-09-2491",
-      });
-
-      uploadedImages.push(url);
-    }
-
-
-    hive.images.push(...uploadedImages);
-    await hive.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Images uploaded successfully",
-      images: hive.images,
-    });
-
-  } catch (err) {
-    console.error("Image upload error:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
 const getHiveById = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -182,7 +190,6 @@ const getHiveById = async (req, res) => {
       });
     }
 
-    // ✅ Check & update expiry status (same logic consistency)
     if (hive.isTemporary && hive.expiryDate) {
       let expiryDateTime = new Date(hive.expiryDate);
 
@@ -230,7 +237,6 @@ const inviteMemberByEmail = async (req, res) => {
       });
     }
 
-    // ✅ Check hive ownership
     const hive = await Hive.findOne({ _id: hiveId, user: inviterId });
     if (!hive) {
       return res.status(404).json({
@@ -239,7 +245,6 @@ const inviteMemberByEmail = async (req, res) => {
       });
     }
 
-    // ✅ Find invited user by email
     const invitedUser = await User.findOne({ email });
     if (!invitedUser) {
       return res.status(404).json({
@@ -248,7 +253,6 @@ const inviteMemberByEmail = async (req, res) => {
       });
     }
 
-    // ✅ Already a member?
     if (hive.members && hive.members.includes(invitedUser._id)) {
       return res.status(400).json({
         success: false,
@@ -256,7 +260,6 @@ const inviteMemberByEmail = async (req, res) => {
       });
     }
 
-    // ✅ Mail transporter (same as OTP)
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -265,7 +268,6 @@ const inviteMemberByEmail = async (req, res) => {
       },
     });
 
-    // ✅ Invite mail template (STATIC)
     const inviteHTML = `
       <div style="font-family:sans-serif;line-height:1.6">
         <h2>You are invited to a Hive 🐝</h2>
@@ -280,7 +282,6 @@ const inviteMemberByEmail = async (req, res) => {
 
         <p>Login to SnapHive to accept this invitation.</p>
 
-        <!-- ✅ Accept Invitation Button -->
         <div style="margin:20px 0;">
           <a href="#"
             style="
@@ -302,8 +303,6 @@ const inviteMemberByEmail = async (req, res) => {
       </div>
     `;
 
-
-    // ✅ Send mail
     await transporter.sendMail({
       from: `"SnapHive" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -331,7 +330,6 @@ const acceptHiveInvite = async (req, res) => {
     const userId = req.user.id;
     const { hiveId } = req.params;
 
-    // ✅ Find hive
     const hive = await Hive.findById(hiveId);
     if (!hive) {
       return res.status(404).json({
@@ -340,7 +338,6 @@ const acceptHiveInvite = async (req, res) => {
       });
     }
 
-    // ✅ Check if already a member
     if (hive.members && hive.members.includes(userId)) {
       return res.status(400).json({
         success: false,
@@ -348,7 +345,6 @@ const acceptHiveInvite = async (req, res) => {
       });
     }
 
-    // ✅ Add member
     hive.members.push(userId);
     await hive.save();
 
