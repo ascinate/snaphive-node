@@ -3,6 +3,18 @@ const bucket = require("../config/firebase");
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
 
+function formatTo12Hour(time) {
+  if (!time) return null;
+
+  let [hour, minute] = time.split(":").map(Number);
+
+  const ampm = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12 || 12; // Convert 0 -> 12 and 13 -> 1
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${ampm}`;
+}
+
+
 const createHive = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -21,9 +33,13 @@ const createHive = async (req, res) => {
       return res.status(400).json({ success: false, message: "Hive name is required" });
     }
 
+    // ✅ Convert 24h -> 12h time format
+    const formattedStartTime = startTime ? formatTo12Hour(startTime) : null;
+    const formattedEndTime = endTime ? formatTo12Hour(endTime) : null;
+
     let coverImageUrl = null;
 
-    // ✅ Stream directly to Firebase (no disk storage)
+    // --- Upload Image to Firebase ---
     if (req.file) {
       const file = req.file;
       const timestamp = Date.now();
@@ -31,15 +47,12 @@ const createHive = async (req, res) => {
 
       const blob = bucket.file(destination);
       const blobStream = blob.createWriteStream({
-        metadata: {
-          contentType: file.mimetype,
-        },
+        metadata: { contentType: file.mimetype },
       });
 
-      // ✅ Upload from buffer instead of disk
       await new Promise((resolve, reject) => {
-        blobStream.on('error', reject);
-        blobStream.on('finish', resolve);
+        blobStream.on("error", reject);
+        blobStream.on("finish", resolve);
         blobStream.end(file.buffer);
       });
 
@@ -51,6 +64,7 @@ const createHive = async (req, res) => {
       coverImageUrl = url;
     }
 
+    // --- Create Hive ---
     const hive = await Hive.create({
       user: userId,
       hiveName,
@@ -58,8 +72,8 @@ const createHive = async (req, res) => {
       privacyMode,
       isTemporary,
       eventDate,
-      startTime,
-      endTime,
+      startTime: formattedStartTime,  // ⬅️ Insert converted string
+      endTime: formattedEndTime,      // ⬅️ Insert converted string
       expiryDate,
       coverImage: coverImageUrl,
     });
