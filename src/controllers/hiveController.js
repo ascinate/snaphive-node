@@ -6,22 +6,39 @@ const User = require("../models/User");
 function formatTo12Hour(time) {
   if (!time) return null;
 
-  // Convert to string and trim
-  const strTime = String(time).trim();
+  let strTime = String(time).trim().toLowerCase();
 
-  // Split into parts
-  const parts = strTime.split(":");
+  let hour, minute;
 
-  let hour = Number(parts[0]);
-  let minute = parts.length > 1 ? Number(parts[1]) : 0; // default to 0 if missing
+  // Check if input has am/pm
+  const isAmPm = strTime.includes("am") || strTime.includes("pm");
+
+  if (isAmPm) {
+    // Example: "1:16 pm" or "12:09 am"
+    const [timePart, modifier] = strTime.split(" "); // ["1:16", "pm"]
+    const parts = timePart.split(":");
+
+    hour = Number(parts[0]);
+    minute = parts.length > 1 ? Number(parts[1]) : 0;
+
+    if (modifier === "pm" && hour < 12) hour += 12;
+    if (modifier === "am" && hour === 12) hour = 0;
+
+  } else {
+    // 24-hour format: "13:20" or "00:45"
+    const parts = strTime.split(":");
+    hour = Number(parts[0]);
+    minute = parts.length > 1 ? Number(parts[1]) : 0;
+  }
 
   // Safety check
   if (isNaN(hour) || isNaN(minute)) return null;
 
+  // Convert to 12-hour format
   const ampm = hour >= 12 ? "PM" : "AM";
-  hour = hour % 12 || 12; // Convert 0 -> 12 and 13 -> 1
+  const displayHour = hour % 12 || 12;
 
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${ampm}`;
+  return `${String(displayHour).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${ampm}`;
 }
 
 
