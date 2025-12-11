@@ -6,7 +6,12 @@ const User = require("../models/User");
 function formatTo12Hour(time) {
   if (!time) return null;
 
-  let [hour, minute] = time.split(":").map(Number);
+  const parts = time.split(":").map(s => s.trim());
+  if (parts.length < 2) return null; // Invalid format
+
+  let [hour, minute] = parts.map(Number);
+
+  if (isNaN(hour) || isNaN(minute)) return null; // Invalid numbers
 
   const ampm = hour >= 12 ? "PM" : "AM";
   hour = hour % 12 || 12; // Convert 0 -> 12 and 13 -> 1
