@@ -1,0 +1,27 @@
+<svg width="520" height="120" viewBox="0 0 520 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient definition -->
+  <defs>
+    <linearGradient id="shGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6C63FF"></stop>
+      <stop offset="100%" stop-color="#2EC4B6"></stop>
+    </linearGradient>
+  </defs>
+
+  <!-- Left circle -->
+  <circle cx="60" cy="60" r="45" fill="url(#shGradient)"></circle>
+
+  <!-- SH text -->
+  <text x="60" y="68" text-anchor="middle" font-size="32" font-weight="700" fill="#ffffff" font-family="Arial, Helvetica, sans-serif">
+    SH
+  </text>
+
+  <!-- Brand name -->
+  <text x="130" y="62" font-size="42" font-weight="700" fill="#111111" font-family="Arial, Helvetica, sans-serif">
+    SnapHive
+  </text>
+
+  <!-- Tagline -->
+  <text x="132" y="88" font-size="16" fill="#6c757d" font-family="Arial, Helvetica, sans-serif">
+    Photosharing app
+  </text>
+</svg>
