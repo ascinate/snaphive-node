@@ -1,27 +1,45 @@
-const renderDashboard = (req, res) => {
+const User = require("../models/User");
+const Hive = require("../models/Hive");
+
+const renderDashboard = async (req, res) => {
   const admin = req.session.admin;
 
   if (!admin) {
     return res.redirect("/login");
   }
 
-  // Safe dummy stats so EJS never crashes
-  const stats = {
-    totalUsers: 0,
-    activeUsers: 0,
-    activationRate: 0,
-    partnersLinked: 0,
-    forecastsPerWeek: 0,
-    forecastUsefulness: 0,
-    contentVerified: 0,
-    churn14d: 0,
-  };
+  try {
+    const [
+      totalUsers,
+      totalHives,
+      activeHives,
+      expiredHives,
+      temporaryHives,
+    ] = await Promise.all([
+      User.countDocuments(),
+      Hive.countDocuments(),
+      Hive.countDocuments({ isExpired: false }),
+      Hive.countDocuments({ isExpired: true }),
+      Hive.countDocuments({ isTemporary: true }),
+    ]);
 
-  res.render("admin/dashboard", {
-    title: "Admin Dashboard",
-    admin,
-    stats,
-  });
+    const stats = {
+      totalUsers,
+      totalHives,
+      activeHives,
+      expiredHives,
+      temporaryHives,
+    };
+
+    res.render("admin/dashboard", {
+      title: "Admin Dashboard",
+      admin,
+      stats,
+    });
+  } catch (error) {
+    console.error("Dashboard Error:", error);
+    res.status(500).send("Failed to load dashboard");
+  }
 };
 
 module.exports = {

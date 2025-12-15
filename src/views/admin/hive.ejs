@@ -1,0 +1,96 @@
+<%- include("../components/adminHeader", { title: title }) %>
+<%- include("../components/adminSidebar") %>
+
+<div class="container">
+  <h2>🐝 Hive Management</h2>
+
+  <form method="GET" action="/hive" style="margin-bottom:15px;">
+  <input
+    type="text"
+    name="search"
+    value="<%= search || '' %>"
+    placeholder="Search hive name..."
+    style="padding:6px;width:250px;"
+  />
+  <button type="submit">Search</button>
+</form>
+
+
+  <table border="1" width="100%" cellpadding="10">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Hive Name</th>
+        <th>Owner</th>
+        <th>Privacy</th>
+        <th>Temporary</th>
+        <th>Members</th>
+        <th>Expired</th>
+        <th>Created</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% if (!hives || hives.length === 0) { %>
+        <tr>
+          <td colspan="9" align="center">No hives found</td>
+        </tr>
+      <% } %>
+
+      <% hives.forEach((hive, index) => { %>
+        <tr>
+          <td><%= (currentPage - 1) * 10 + index + 1 %></td>
+          <td><%= hive.hiveName %></td>
+          <td>
+            <%= hive.user?.name || "N/A" %><br>
+            <small><%= hive.user?.email %></small>
+          </td>
+          <td><%= hive.privacyMode %></td>
+          <td><%= hive.isTemporary ? "Yes" : "No" %></td>
+          <td><%= hive.members.length %></td>
+          <td style="color:<%= hive.isExpired ? 'red' : 'green' %>">
+            <%= hive.isExpired ? "Expired" : "Active" %>
+          </td>
+          <td><%= hive.createdAt.toDateString() %></td>
+          <td>
+            <% if (!hive.isExpired) { %>
+              <form
+                action="hive/expire/<%= hive._id %>"
+                method="POST"
+                onsubmit="return confirm('Expire this hive?')"
+              >
+                <button style="background:red;color:#fff">
+                  Force Expire
+                </button>
+              </form>
+            <% } else { %>
+              —
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% if (totalPages > 1) { %>
+  <div style="margin-top:20px;">
+    <% for (let i = 1; i <= totalPages; i++) { %>
+      <a
+        href="/hive?page=<%= i %>&search=<%= search || '' %>"
+        style="
+          margin-right:5px;
+          padding:6px 10px;
+          text-decoration:none;
+          border:1px solid #ccc;
+          <%= currentPage === i ? 'background:#333;color:#fff;' : '' %>
+        "
+      >
+        <%= i %>
+      </a>
+    <% } %>
+  </div>
+<% } %>
+
+</div>
+
+<%- include("../components/adminFooter") %>

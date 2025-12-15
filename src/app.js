@@ -13,6 +13,8 @@ const eventRoutes = require("./routes/eventRoutes");
 const hiveRoutes = require("./routes/hiveRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const adminHiveRoutes = require("./routes/adminHiveRoutes");
+const adminUserRoutes = require("./routes/adminUserRoutes");
 
 
 const app = express();
@@ -44,6 +46,10 @@ app.use(
     },
   })
 );
+app.use((req, res, next) => {
+  res.locals.admin = req.session.admin || null;
+  next();
+});
 
 /* -------------------- STATIC + VIEW ENGINE -------------------- */
 // ✅ OPTION 1: serve public at ROOT
@@ -70,11 +76,15 @@ app.get("/login", (req, res) => {
   res.render("login", { title: "Admin Login", error: null });
 });
 
+/* -------------------- admin -------------------- */
+app.use("/admin", adminRoutes);
+app.use("/dashboard", dashboardRoutes);
+app.use("/hive", adminHiveRoutes);
+app.use("/user", adminUserRoutes);
 
 
 /* -------------------- API ROUTES -------------------- */
-app.use("/api/admins", adminRoutes);
-app.use("/dashboard", dashboardRoutes);
+
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/hives", hiveRoutes);
