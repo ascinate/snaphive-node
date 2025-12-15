@@ -1,4 +1,8 @@
 const Admin = require("../models/Admin");
+const Hive = require("../models/Hive");
+const User = require("../models/User");
+
+
 
 /* -------------------- GET ALL ADMINS -------------------- */
 const getAllAdmins = async (req, res) => {
@@ -135,6 +139,105 @@ const logoutAdmin = (req, res) => {
   });
 };
 
+
+
+/* -------------------- hive manage -------------------- */
+
+const getAllHives = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+    const search = req.query.search || "";
+
+   
+    const query = search
+      ? {
+          hiveName: { $regex: search, $options: "i" },
+        }
+      : {};
+
+    const totalHives = await Hive.countDocuments(query);
+
+    const hives = await Hive.find(query)
+      .populate("user", "name email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalPages = Math.ceil(totalHives / limit);
+
+    res.render("admin/hive", {
+      title: "Manage Hives",
+      hives,
+      currentPage: page,
+      totalPages,
+      search,
+    });
+  } catch (error) {
+    console.error("Get Hives Error:", error);
+    res.status(500).send("Failed to load hives");
+  }
+};
+
+
+const forceExpireHive = async (req, res) => {
+  try {
+    const hiveId = req.params.id;
+
+    await Hive.findByIdAndUpdate(hiveId, {
+      isExpired: true,
+      expiryDate: new Date(),
+    });
+
+    res.redirect("/hive");
+  } catch (error) {
+    console.error("Expire Hive Error:", error);
+    res.status(500).send("Failed to expire hive");
+  }
+};
+
+/* -------------------- user manage -------------------- */
+const getAllUsers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+    const search = req.query.search || "";
+
+    // 🔍 Search by name OR email
+    const query = search
+      ? {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const totalUsers = await User.countDocuments(query);
+
+    const users = await User.find(query)
+      .select("-password -otp -otpExpires")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    res.render("admin/users", {
+      title: "Manage Users",
+      users,
+      currentPage: page,
+      totalPages,
+      search,
+    });
+  } catch (error) {
+    console.error("Get Users Error:", error);
+    res.status(500).send("Failed to load users");
+  }
+};
+
 module.exports = {
   getAllAdmins,
   getAdminById,
@@ -143,4 +246,7 @@ module.exports = {
   deleteAdmin,
   loginAdmin,
   logoutAdmin,
+  getAllHives,
+  forceExpireHive,
+  getAllUsers
 };

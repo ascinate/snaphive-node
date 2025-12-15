@@ -12,138 +12,92 @@
                         <div class="col-sm-6">
                             <h3 class="mb-0">Dashboard</h3>
                         </div>
-                        
+
                     </div>
-                    <!--end::Row-->
                 </div>
-                <!--end::Container-->
             </div>
-            <!--end::App Content Header-->
-            <!--begin::App Content-->
             <div class="app-content">
-                <!--begin::Container-->
                 <div class="container-fluid">
-                    <!--begin::Row-->
                     <div class="row g-3 mb-4">
-                        <!-- Card 1 -->
-                        <div class="col-lg-3 col-6">
-                            <div class="card text-white position-relative"
-                                style="background-color:#007bff; border:none; border-radius:10px; overflow:hidden;">
-                                <div class="card-body">
-                                    <h3 class="fw-bold mb-1"></h3>
-                                    <p class="mb-0">Total Users</p>
-                                    <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                        style="font-size:3rem; opacity:0.3;">
-                                        <i class="bi bi-person-circle"></i>
-                                    </span>
+                        <div class="row g-3">
+                            <div class="col-lg-3 col-6">
+                                <div class="card text-white position-relative"
+                                    style="background-color:#007bff; border:none; border-radius:10px; overflow:hidden;">
+                                    <div class="card-body">
+                                        <h3 class="fw-bold mb-1">
+                                            <%= stats.totalUsers %>
+                                        </h3>
+                                        <p class="mb-0">Total Users</p>
+                                        <span class="position-absolute top-50 end-0 translate-middle-y me-3"
+                                            style="font-size:3rem; opacity:0.3;">
+                                            <i class="bi bi-person-circle"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-6">
+                                <div class="card text-white position-relative"
+                                    style="background-color:#28a745; border:none; border-radius:10px; overflow:hidden;">
+                                    <div class="card-body">
+                                        <h3 class="fw-bold mb-1">
+                                            <%= stats.totalHives %>
+                                        </h3>
+                                        <p class="mb-0">Total Hives</p>
+                                        <span class="position-absolute top-50 end-0 translate-middle-y me-3"
+                                            style="font-size:3rem; opacity:0.3;">
+                                            <i class="bi bi-hive"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-6">
+                                <div class="card text-white position-relative"
+                                    style="background-color:#17a2b8; border:none; border-radius:10px; overflow:hidden;">
+                                    <div class="card-body">
+                                        <h3 class="fw-bold mb-1">
+                                            <%= stats.activeHives %>
+                                        </h3>
+                                        <p class="mb-0">Active Hives</p>
+                                        <span class="position-absolute top-50 end-0 translate-middle-y me-3"
+                                            style="font-size:3rem; opacity:0.3;">
+                                            <i class="bi bi-check-circle"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-6">
+                                <div class="card text-white position-relative"
+                                    style="background-color:#dc3545; border:none; border-radius:10px; overflow:hidden;">
+                                    <div class="card-body">
+                                        <h3 class="fw-bold mb-1">
+                                            <%= stats.expiredHives %>
+                                        </h3>
+                                        <p class="mb-0">Expired Hives</p>
+                                        <span class="position-absolute top-50 end-0 translate-middle-y me-3"
+                                            style="font-size:3rem; opacity:0.3;">
+                                            <i class="bi bi-x-circle"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3 col-6">
+                                <div class="card text-white position-relative"
+                                    style="background-color:#ffc107; border:none; border-radius:10px; overflow:hidden;">
+                                    <div class="card-body">
+                                        <h3 class="fw-bold mb-1">
+                                            <%= stats.temporaryHives %>
+                                        </h3>
+                                        <p class="mb-0">Temporary Hives</p>
+                                        <span class="position-absolute top-50 end-0 translate-middle-y me-3"
+                                            style="font-size:3rem; opacity:0.3;">
+                                            <i class="bi bi-clock-history"></i>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Card 2 -->
-                        <div class="col-lg-3 col-6">
-                            <div class="card text-white position-relative"
-                                style="background-color:#28a745; border:none; border-radius:10px;">
-                                <div class="card-body">
-                                    <h3 class="fw-bold mb-1"> <sup>%</sup></h3>
-                                    <p class="mb-0">Active Users</p>
-                                    <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                        style="font-size:3rem; opacity:0.3;">
-                                        <i class="bi bi-activity"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Card 3 -->
-                        <div class="col-lg-3 col-6">
-                            <div class="card text-white position-relative"
-                                style="background-color:#ffc107; border:none; border-radius:10px;">
-                                <div class="card-body">
-                                    <h3 class="fw-bold mb-1"></h3>
-                                    <p class="mb-0">Activation Rate</p>
-                                    <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                        style="font-size:3rem; opacity:0.3;">
-                                        <i class="bi-rocket-takeoff"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Card 4 -->
-                        <div class="col-lg-3 col-6">
-                            <div class="card text-white position-relative"
-                                style="background-color:#dc3545; border:none; border-radius:10px;">
-                                <div class="card-body">
-                                    <h3 class="fw-bold mb-1"></h3>
-                                    <p class="mb-0">Partners Linked</p>
-                                    <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                        style="font-size:3rem; opacity:0.3;">
-                                        <i class="bi bi-people-fill"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Card 5 -->
-                        <div class="col-lg-3 col-6">
-                            <div class="card text-white position-relative"
-                                style="background-color:#6f42c1; border:none; border-radius:10px;">
-                                <div class="card-body">
-                                    <h3 class="fw-bold mb-1"></h3>
-                                    <p class="mb-0">Forecasts Delivered / Week</p>
-                                    <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                        style="font-size:3rem; opacity:0.3;">
-                                        <i class="bi bi-calendar4-week"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Card 6 -->
-                        <div class="col-lg-3 col-6">
-                            <div class="card text-white position-relative"
-                                style="background-color:#17a2b8; border:none; border-radius:10px;">
-                                <div class="card-body">
-                                    <h3 class="fw-bold mb-1"></h3>
-                                    <p class="mb-0">Forecast Usefulness</p>
-                                    <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                        style="font-size:3rem; opacity:0.3;">
-                                        <i class="bi bi-star-half"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Card 7 -->
-                        <div class="col-lg-3 col-6">
-                            <div class="card text-white position-relative"
-                                style="background-color:#fd7e14; border:none; border-radius:10px;">
-                                <div class="card-body">
-                                    <h3 class="fw-bold mb-1"></h3>
-                                    <p class="mb-0">Content Verified</p>
-                                    <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                        style="font-size:3rem; opacity:0.3;">
-                                        <i class="bi bi-patch-check-fill"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Card 8 -->
-                        <div class="col-lg-3 col-6">
-                            <div class="card text-white position-relative"
-                                style="background-color:#20c997; border:none; border-radius:10px;">
-                                <div class="card-body">
-                                    <h3 class="fw-bold mb-1"></h3>
-                                    <p class="mb-0">Churn (14d)</p>
-                                    <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                        style="font-size:3rem; opacity:0.3;">
-                                        <i class="bi bi-arrow-counterclockwise"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                     <!--end::Row-->
                     <!--begin::Row-->
@@ -234,7 +188,7 @@
                             tooltip: { shared: true, intersect: false }
                         };
                         new ApexCharts(document.querySelector("#engagementTrend"), engagementOptions).render();
-                        
+
                         var adoptionOptions = {
                             chart: {
                                 type: 'bar',

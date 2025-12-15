@@ -8,6 +8,7 @@ const {
   loginAdmin,
   logoutAdmin,
 } = require("../controllers/adminController");
+const adminAuth = require("../middleware/adminAuth");
 
 const router = express.Router();
 
