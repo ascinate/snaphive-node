@@ -15,10 +15,20 @@
   <button type="submit">Search</button>
 </form>
 
+  <button
+    onclick="deleteSelectedHives()"
+    style="background:#b30000;color:#fff;padding:8px 12px;margin-bottom:10px;"
+  >
+    🗑 Delete Selected
+  </button>
 
   <table border="1" width="100%" cellpadding="10">
     <thead>
       <tr>
+        <th>
+          <input type="checkbox" id="selectAll">
+        </th>
+
         <th>#</th>
         <th>Hive Name</th>
         <th>Owner</th>
@@ -40,6 +50,10 @@
 
       <% hives.forEach((hive, index) => { %>
         <tr>
+          <td>
+            <input type="checkbox" class="hiveCheckbox" value="<%= hive._id %>">
+          </td>
+
           <td><%= (currentPage - 1) * 10 + index + 1 %></td>
           <td><%= hive.hiveName %></td>
           <td>
@@ -92,5 +106,58 @@
 <% } %>
 
 </div>
+<script>
+  // Select all
+  document.getElementById("selectAll")?.addEventListener("change", function () {
+    document
+      .querySelectorAll(".hiveCheckbox")
+      .forEach(cb => (cb.checked = this.checked));
+  });
+
+  // 🔥 Single delete
+  function deleteSingleHive(id) {
+    if (!confirm("Delete this hive permanently?")) return false;
+
+    fetch(`/hive/${id}`, {
+      method: "DELETE",
+    })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || "Hive deleted");
+        location.reload();
+      })
+      .catch(err => alert("Delete failed"));
+
+    return false;
+  }
+
+  // 🔥 Multiple delete
+  function deleteSelectedHives() {
+    const ids = Array.from(
+      document.querySelectorAll(".hiveCheckbox:checked")
+    ).map(cb => cb.value);
+
+    if (ids.length === 0) {
+      alert("Please select at least one hive");
+      return;
+    }
+
+    if (!confirm(`Delete ${ids.length} selected hives?`)) return;
+
+    fetch("/hive", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ids }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || "Hives deleted");
+        location.reload();
+      })
+      .catch(err => alert("Bulk delete failed"));
+  }
+</script>
 
 <%- include("../components/adminFooter") %>

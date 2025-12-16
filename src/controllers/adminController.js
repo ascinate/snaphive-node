@@ -197,6 +197,54 @@ const forceExpireHive = async (req, res) => {
   }
 };
 
+const deleteHives = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ids } = req.body;
+
+    // 🔥 Multiple delete
+    if (ids && Array.isArray(ids) && ids.length > 0) {
+      const result = await Hive.deleteMany({
+        _id: { $in: ids },
+      });
+
+      return res.json({
+        success: true,
+        message: `${result.deletedCount} hives deleted successfully`,
+      });
+    }
+
+    // 🔥 Single delete
+    if (id) {
+      const hive = await Hive.findByIdAndDelete(id);
+
+      if (!hive) {
+        return res.status(404).json({
+          success: false,
+          message: "Hive not found",
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: "Hive deleted successfully",
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: "No hive ID provided",
+    });
+  } catch (error) {
+    console.error("Delete Hive Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete hive",
+    });
+  }
+};
+
+
 /* -------------------- user manage -------------------- */
 const getAllUsers = async (req, res) => {
   try {
@@ -248,5 +296,6 @@ module.exports = {
   logoutAdmin,
   getAllHives,
   forceExpireHive,
-  getAllUsers
+  getAllUsers,
+  deleteHives
 };
