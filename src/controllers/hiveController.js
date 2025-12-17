@@ -247,19 +247,21 @@ const getHiveById = async (req, res) => {
     const { hiveId } = req.params;
 
     const hive = await Hive.findOne({
-  _id: hiveId,
-  $or: [
-    { user: userId },
-    {
-      members: {
-        $elemMatch: {
-          memberId: userId,
-          status: "accepted",
+      _id: hiveId,
+      $or: [
+        { user: userId },
+        {
+          members: {
+            $elemMatch: {
+              memberId: userId,
+              status: "accepted",
+            },
+          },
         },
-      },
-    },
-  ],
-});
+      ],
+    })
+      .populate("members.memberId", "email name profileImage")
+      .populate("user", "email name profileImage");
 
 
     if (!hive) {
@@ -269,6 +271,11 @@ const getHiveById = async (req, res) => {
       });
     }
 
+    // 🔹 DETERMINE USER ROLE
+    const userRole =
+      hive.user.toString() === userId ? "owner" : "member";
+
+    // 🔹 EXPIRY LOGIC (unchanged)
     if (hive.isTemporary && hive.expiryDate) {
       let expiryDateTime = new Date(hive.expiryDate);
 
@@ -279,9 +286,7 @@ const getHiveById = async (req, res) => {
         if (meridian.toLowerCase() === "pm" && hours !== 12) hours += 12;
         if (meridian.toLowerCase() === "am" && hours === 12) hours = 0;
 
-        expiryDateTime.setHours(hours);
-        expiryDateTime.setMinutes(minutes);
-        expiryDateTime.setSeconds(0);
+        expiryDateTime.setHours(hours, minutes, 0);
       }
 
       if (new Date() > expiryDateTime && !hive.isExpired) {
@@ -293,6 +298,7 @@ const getHiveById = async (req, res) => {
     res.status(200).json({
       success: true,
       data: hive,
+      userRole,
     });
   } catch (err) {
     console.error("Get hive by ID error:", err);
@@ -302,6 +308,7 @@ const getHiveById = async (req, res) => {
     });
   }
 };
+
 
 const inviteMemberByEmail = async (req, res) => {
   try {
