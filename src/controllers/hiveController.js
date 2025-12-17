@@ -260,8 +260,9 @@ const getHiveById = async (req, res) => {
         },
       ],
     })
-      .populate("members.memberId", "email name profileImage")
-      .populate("user", "email name profileImage");
+      .populate("user", "email name profileImage")
+      .populate("members.memberId", "email name profileImage");
+
 
 
     if (!hive) {
