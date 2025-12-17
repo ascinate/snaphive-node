@@ -181,11 +181,28 @@ const uploadHiveImages = async (req, res) => {
 const getUserHives = async (req, res) => {
   try {
     const userId = req.user.id;
-    const hives = await Hive.find({ user: userId }).sort({ createdAt: -1 });
+
+    let hives = await Hive.find({
+      $or: [
+        { user: userId }, // owner
+        {
+          members: {
+            $elemMatch: {
+              memberId: userId,
+              status: "accepted",
+            },
+          },
+        },
+      ],
+    })
+      .populate("user", "name email profileImage")
+      .populate("members.memberId", "name email profileImage")
+      .sort({ createdAt: -1 });
 
     const now = new Date();
 
     for (const hive of hives) {
+      // 🔹 EXPIRY CHECK (unchanged)
       if (hive.isTemporary && hive.expiryDate) {
         let expiryDateTime = new Date(hive.expiryDate);
 
@@ -196,23 +213,33 @@ const getUserHives = async (req, res) => {
           if (meridian.toLowerCase() === "pm" && hours !== 12) hours += 12;
           if (meridian.toLowerCase() === "am" && hours === 12) hours = 0;
 
-          expiryDateTime.setHours(hours);
-          expiryDateTime.setMinutes(minutes);
-          expiryDateTime.setSeconds(0);
-        }
+          expiryDateTime.setHours(hours, minutes, 0);
 
-        if (now > expiryDateTime && !hive.isExpired) {
-          hive.isExpired = true;
-          await hive.save();
+          if (now > expiryDateTime && !hive.isExpired) {
+            hive.isExpired = true;
+            await hive.save();
+          }
         }
       }
+
+      // 🔹 FILTER MEMBERS → ONLY ACCEPTED
+      hive.members = hive.members.filter(
+        (m) => m.status === "accepted"
+      );
     }
 
-    res.status(200).json({ success: true, hives });
+    res.status(200).json({
+      success: true,
+      hives,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
+
 
 const getHiveById = async (req, res) => {
   try {
