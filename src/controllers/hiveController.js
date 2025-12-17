@@ -247,9 +247,20 @@ const getHiveById = async (req, res) => {
     const { hiveId } = req.params;
 
     const hive = await Hive.findOne({
-      _id: hiveId,
-      user: userId,
-    });
+  _id: hiveId,
+  $or: [
+    { user: userId },
+    {
+      members: {
+        $elemMatch: {
+          memberId: userId,
+          status: "accepted",
+        },
+      },
+    },
+  ],
+});
+
 
     if (!hive) {
       return res.status(404).json({
