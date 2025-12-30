@@ -54,33 +54,36 @@ const createHive = async (req, res) => {
       startTime,
       endTime,
       expiryDate,
+      stockImage, // ✅ NEW
     } = req.body;
 
     if (!hiveName) {
-      return res.status(400).json({ success: false, message: "Hive name is required" });
+      return res.status(400).json({
+        success: false,
+        message: "Hive name is required",
+      });
     }
 
-    // ✅ Convert 24h -> 12h time format
     const formattedStartTime = startTime ? formatTo12Hour(startTime) : null;
     const formattedEndTime = endTime ? formatTo12Hour(endTime) : null;
 
     let coverImageUrl = null;
 
-    // --- Upload Image to Firebase ---
+    // ✅ CASE 1: Gallery image upload
     if (req.file) {
       const file = req.file;
-      const timestamp = Date.now();
-      const destination = `hive_covers/${userId}_${timestamp}_${file.originalname}`;
+      const destination = `hive_covers/${userId}_${Date.now()}_${file.originalname}`;
 
       const blob = bucket.file(destination);
       const blobStream = blob.createWriteStream({
         metadata: { contentType: file.mimetype },
       });
 
+      blobStream.end(file.buffer);
+
       await new Promise((resolve, reject) => {
-        blobStream.on("error", reject);
         blobStream.on("finish", resolve);
-        blobStream.end(file.buffer);
+        blobStream.on("error", reject);
       });
 
       const [url] = await blob.getSignedUrl({
@@ -91,7 +94,12 @@ const createHive = async (req, res) => {
       coverImageUrl = url;
     }
 
-    // --- Create Hive ---
+    // ✅ CASE 2: Stock image
+    if (!req.file && stockImage) {
+      coverImageUrl = `https://snaphive-node.vercel.app/stock/${stockImage}.jpg`;
+      // ⬆️ adjust path if needed
+    }
+
     const hive = await Hive.create({
       user: userId,
       hiveName,
@@ -99,8 +107,8 @@ const createHive = async (req, res) => {
       privacyMode,
       isTemporary,
       eventDate,
-      startTime: formattedStartTime,  // ⬅️ Insert converted string
-      endTime: formattedEndTime,      // ⬅️ Insert converted string
+      startTime: formattedStartTime,
+      endTime: formattedEndTime,
       expiryDate,
       coverImage: coverImageUrl,
     });
@@ -113,9 +121,13 @@ const createHive = async (req, res) => {
 
   } catch (err) {
     console.error("Create hive error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
+
 
 const uploadHiveImages = async (req, res) => {
   try {
