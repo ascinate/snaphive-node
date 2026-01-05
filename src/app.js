@@ -24,6 +24,11 @@ connectDB();
 
 /* -------------------- MIDDLEWARE -------------------- */
 app.use(express.json());
+app.use(
+  "/stock",
+  express.static(path.join(__dirname, "uploads/stock"))
+);
+
 app.use(express.urlencoded({ extended: true }));
 
 app.use(
