@@ -10,7 +10,7 @@ const storage = multer.memoryStorage();
 const upload = multer({
     storage,
     limits: {
-        fileSize: 50 * 1024 * 1024, // 10 MB
+        fileSize: 8 * 1024 * 1024, // 10 MB
     },
 });
 
@@ -21,7 +21,7 @@ router.get("/:hiveId", protect, getHiveById);
 router.post(
     "/:hiveId/images",
     protect,
-    upload.array("images", 4),
+    upload.array("images", 10),
     uploadHiveImages
 );
 router.post("/:hiveId/invite", protect, inviteMemberByEmail);
