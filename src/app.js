@@ -23,13 +23,13 @@ const app = express();
 connectDB();
 
 /* -------------------- MIDDLEWARE -------------------- */
-app.use(express.json());
+app.use(express.json({ limit: "25mb" }));
 app.use(
   "/stock",
   express.static(path.join(__dirname, "../uploads/stock"))
 );
 
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 app.use(
   cors({
