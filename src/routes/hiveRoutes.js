@@ -4,9 +4,19 @@ const multer = require("multer");
 const protect = require("../middleware/authMiddleware");
 const { createHive, getUserHives, uploadHiveImages, inviteMemberByEmail, acceptHiveInvite, getHiveById, acceptHiveInviteByEmail } = require("../controllers/hiveController");
 
-// ✅ Use memory storage instead of disk storage
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
 
+  destination: "uploads/",
+
+  filename: (req, file, cb) => {
+
+    cb(null, `${Date.now()}-${file.originalname}`);
+
+  },
+
+});
+
+ 
 const upload = multer({
     storage,
     limits: {
