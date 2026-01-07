@@ -122,65 +122,31 @@ const createHive = async (req, res) => {
 
 
 
-const uploadHiveImages = async (req, res) => {
+const saveHiveImageUrls = async (req, res) => {
   try {
     const userId = req.user.id;
     const hiveId = req.params.hiveId;
+    const { images } = req.body;
+
+    if (!Array.isArray(images) || !images.length) {
+      return res.status(400).json({ message: "No image URLs provided" });
+    }
 
     const hive = await Hive.findOne({ _id: hiveId, user: userId });
     if (!hive) {
-      return res.status(404).json({ success: false, message: "Hive not found" });
+      return res.status(404).json({ message: "Hive not found" });
     }
 
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ success: false, message: "No images uploaded" });
-    }
-
-    const timestamp = Date.now();
-    let uploadedImages = [];
-
-    // ✅ Process uploads in parallel for better performance
-    const uploadPromises = req.files.map(async (file) => {
-      const destination = `hive_images/${userId}_${timestamp}_${file.originalname}`;
-
-      const blob = bucket.file(destination);
-      const blobStream = blob.createWriteStream({
-        metadata: {
-          contentType: file.mimetype,
-        },
-      });
-
-      // ✅ Stream from buffer
-      await new Promise((resolve, reject) => {
-        blobStream.on('error', reject);
-        blobStream.on('finish', resolve);
-        blobStream.end(file.buffer);
-      });
-
-      const [url] = await blob.getSignedUrl({
-        action: "read",
-        expires: "03-09-2491",
-      });
-
-      return url;
-    });
-
-    uploadedImages = await Promise.all(uploadPromises);
-
-    hive.images.push(...uploadedImages);
+    hive.images.push(...images);
     await hive.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Images uploaded successfully",
-      images: hive.images,
-    });
-
+    res.json({ success: true, images: hive.images });
   } catch (err) {
-    console.error("Image upload error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    console.error("Save URLs error:", err);
+    res.status(500).json({ message: err.message });
   }
 };
+
 
 // Keep other functions as they are...
 const getUserHives = async (req, res) => {
@@ -575,4 +541,4 @@ const acceptHiveInviteByEmail = async (req, res) => {
 };
 
 
-module.exports = { createHive, getUserHives, uploadHiveImages, getHiveById, inviteMemberByEmail, acceptHiveInvite, acceptHiveInviteByEmail };
+module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMemberByEmail, acceptHiveInvite, acceptHiveInviteByEmail };
