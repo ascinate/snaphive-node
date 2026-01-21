@@ -42,83 +42,45 @@ function formatTo12Hour(time) {
 }
 
 
-const createHive = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const {
-      hiveName,
-      description,
-      privacyMode,
-      eventDate,
-      startTime,
-      endTime,
-      expiryDate,
-      stockImage,
-    } = req.body;
+  const createHive = async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const {
+        hiveName,
+        description,
+        privacyMode,
+        eventDate,
+        startTime,
+        endTime,
+        expiryDate,
+        coverImage,
+      } = req.body;
 
-    if (!hiveName) {
-      return res.status(400).json({
-        success: false,
-        message: "Hive name is required",
+      if (!hiveName) {
+        return res.status(400).json({ success: false, message: "Hive name is required" });
+      }
+
+      const hive = await Hive.create({
+        user: userId,
+        hiveName,
+        description,
+        privacyMode,
+        eventDate,
+        startTime,
+        endTime,
+        expiryDate,
+        coverImage,
       });
+
+      res.status(201).json({
+        success: true,
+        message: "Hive created successfully",
+        data: hive,
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
     }
-
-    const formattedStartTime = startTime ? formatTo12Hour(startTime) : null;
-    const formattedEndTime = endTime ? formatTo12Hour(endTime) : null;
-
-    let coverImageUrl = null;
-    if (req.file) {
-      const file = req.file;
-      const destination = `hive_covers/${userId}_${Date.now()}_${file.originalname}`;
-
-      const blob = bucket.file(destination);
-      const blobStream = blob.createWriteStream({
-        metadata: { contentType: file.mimetype },
-      });
-
-      blobStream.end(file.buffer);
-
-      await new Promise((resolve, reject) => {
-        blobStream.on("finish", resolve);
-        blobStream.on("error", reject);
-      });
-
-      const [url] = await blob.getSignedUrl({
-        action: "read",
-        expires: "03-09-2491",
-      });
-
-      coverImageUrl = url;
-    } else if (stockImage) {
-      coverImageUrl = `https://snaphive-node.vercel.app/stock/${stockImage}.jpg`;
-    }
-
-    const hive = await Hive.create({
-      user: userId,
-      hiveName,
-      description,
-      privacyMode,
-      eventDate,
-      startTime: formattedStartTime,
-      endTime: formattedEndTime,
-      expiryDate,
-      coverImage: coverImageUrl,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "Hive created successfully",
-      data: hive,
-    });
-
-  } catch (err) {
-    console.error("Create hive error:", err);
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-};
+  };
 
 
 
