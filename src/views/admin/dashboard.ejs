@@ -19,86 +19,126 @@
             <div class="app-content">
                 <div class="container-fluid">
                     <div class="row g-3 mb-4">
-                        <div class="row g-3">
-                            <div class="col-lg-3 col-6">
-                                <div class="card text-white position-relative"
-                                    style="background-color:#007bff; border:none; border-radius:10px; overflow:hidden;">
-                                    <div class="card-body">
-                                        <h3 class="fw-bold mb-1">
-                                            <%= stats.totalUsers %>
-                                        </h3>
-                                        <p class="mb-0">Total Users</p>
-                                        <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                            style="font-size:3rem; opacity:0.3;">
-                                            <i class="bi bi-person-circle"></i>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-6">
-                                <div class="card text-white position-relative"
-                                    style="background-color:#28a745; border:none; border-radius:10px; overflow:hidden;">
-                                    <div class="card-body">
-                                        <h3 class="fw-bold mb-1">
-                                            <%= stats.totalHives %>
-                                        </h3>
-                                        <p class="mb-0">Total Hives</p>
-                                        <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                            style="font-size:3rem; opacity:0.3;">
-                                            <i class="bi bi-hive"></i>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-6">
-                                <div class="card text-white position-relative"
-                                    style="background-color:#17a2b8; border:none; border-radius:10px; overflow:hidden;">
-                                    <div class="card-body">
-                                        <h3 class="fw-bold mb-1">
-                                            <%= stats.activeHives %>
-                                        </h3>
-                                        <p class="mb-0">Active Hives</p>
-                                        <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                            style="font-size:3rem; opacity:0.3;">
-                                            <i class="bi bi-check-circle"></i>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-3 col-6">
-                                <div class="card text-white position-relative"
-                                    style="background-color:#dc3545; border:none; border-radius:10px; overflow:hidden;">
-                                    <div class="card-body">
-                                        <h3 class="fw-bold mb-1">
-                                            <%= stats.expiredHives %>
-                                        </h3>
-                                        <p class="mb-0">Expired Hives</p>
-                                        <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                            style="font-size:3rem; opacity:0.3;">
-                                            <i class="bi bi-x-circle"></i>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div class="col-lg-3 col-6">
-                                <div class="card text-white position-relative"
-                                    style="background-color:#ffc107; border:none; border-radius:10px; overflow:hidden;">
-                                    <div class="card-body">
-                                        <h3 class="fw-bold mb-1">
-                                            <%= stats.temporaryHives %>
-                                        </h3>
-                                        <p class="mb-0">Temporary Hives</p>
-                                        <span class="position-absolute top-50 end-0 translate-middle-y me-3"
-                                            style="font-size:3rem; opacity:0.3;">
-                                            <i class="bi bi-clock-history"></i>
-                                        </span>
-                                    </div>
+                        <!-- ROW 1 – USERS -->
+                        <div class="col-lg-3 col-6">
+                            <div class="card text-white position-relative"
+                                style="background:#007bff;border-radius:10px">
+                                <div class="card-body">
+                                    <h3>
+                                        <%= stats.totalUsers %>
+                                    </h3>
+                                    <p class="mb-0">Total Users</p>
+                                    <i
+                                        class="bi bi-people fs-1 opacity-25 position-absolute top-50 end-0 translate-middle-y me-3"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-6">
+                            <div class="card text-white position-relative"
+                                style="background:#28a745;border-radius:10px">
+                                <div class="card-body">
+                                    <h3>
+                                        <%= stats.dailyActiveUsers %>
+                                    </h3>
+                                    <p class="mb-0">Daily Active Users</p>
+                                    <i
+                                        class="bi bi-calendar-day fs-1 opacity-25 position-absolute top-50 end-0 translate-middle-y me-3"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-6">
+                            <div class="card text-white position-relative"
+                                style="background:#17a2b8;border-radius:10px">
+                                <div class="card-body">
+                                    <h3>
+                                        <%= stats.monthlyActiveUsers %>
+                                    </h3>
+                                    <p class="mb-0">Monthly Active Users</p>
+                                    <i
+                                        class="bi bi-calendar-month fs-1 opacity-25 position-absolute top-50 end-0 translate-middle-y me-3"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-6">
+                            <div class="card text-dark position-relative" style="background:#ffc107;border-radius:10px">
+                                <div class="card-body">
+                                    <h3>
+                                        <%= stats.autoSyncRate %>%
+                                    </h3>
+                                    <p class="mb-0">Auto Sync Usage</p>
+                                    <i
+                                        class="bi bi-arrow-repeat fs-1 opacity-25 position-absolute top-50 end-0 translate-middle-y me-3"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ROW 2 – HIVES -->
+                        <div class="col-lg-6 col-6">
+                            <div class="card text-white position-relative"
+                                style="background:#6f42c1;border-radius:10px">
+                                <div class="card-body">
+                                    <h3>
+                                        <%= stats.totalHives %>
+                                    </h3>
+                                    <p class="mb-0">Total Hives</p>
+                                    <i
+                                        class="bi bi-hive fs-1 opacity-25 position-absolute top-50 end-0 translate-middle-y me-3"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 col-6">
+                            <div class="card text-white position-relative"
+                                style="background:#20c997;border-radius:10px">
+                                <div class="card-body">
+                                    <h3>
+                                        <%= stats.hivesToday %>
+                                    </h3>
+                                    <p class="mb-0">Hives Created Today</p>
+                                    <i
+                                        class="bi bi-plus-circle fs-1 opacity-25 position-absolute top-50 end-0 translate-middle-y me-3"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ROW 3 – MEDIA -->
+                        <div class="col-lg-6 col-6">
+                            <div class="card text-white position-relative"
+                                style="background:#343a40;border-radius:10px">
+                                <div class="card-body">
+                                    <h3>
+                                        <%= stats.totalPhotos %>
+                                    </h3>
+                                    <p class="mb-0">Total Photos Uploaded</p>
+                                    <i
+                                        class="bi bi-images fs-1 opacity-25 position-absolute top-50 end-0 translate-middle-y me-3"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 col-6">
+                            <div class="card text-white position-relative"
+                                style="background:#fd7e14;border-radius:10px">
+                                <div class="card-body">
+                                    <h3>
+                                        <%= stats.storageUsedGB %> GB
+                                    </h3>
+                                    <p class="mb-0">Storage Usage</p>
+                                    <i
+                                        class="bi bi-hdd fs-1 opacity-25 position-absolute top-50 end-0 translate-middle-y me-3"></i>
                                 </div>
                             </div>
                         </div>
 
                     </div>
+
+
+
+
                     <!--end::Row-->
                     <!--begin::Row-->
                     <!-- Include ApexCharts -->
