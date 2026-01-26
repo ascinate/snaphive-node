@@ -1,0 +1,135 @@
+/* Modal Overlay */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal Card */
+.modal-card {
+  background: #ffffff;
+  width: 520px;
+  max-width: 92%;
+  border-radius: 12px;
+  padding: 24px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: fadeInUp 0.25s ease;
+}
+
+/* Title */
+.modal-title {
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+/* Close Button */
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 26px;
+  cursor: pointer;
+  color: #999;
+}
+
+.modal-close:hover {
+  color: #000;
+}
+
+/* Content */
+.modal-content {
+  font-size: 14px;
+  color: #333;
+}
+
+/* Profile Header */
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.profile-header img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #eee;
+}
+
+.profile-name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.profile-email {
+  color: #666;
+  font-size: 13px;
+}
+
+/* Info Grid */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.profile-item span {
+  display: block;
+  font-size: 12px;
+  color: #777;
+}
+
+.profile-item strong {
+  font-size: 14px;
+}
+
+/* Actions */
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.profile-actions a {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  text-decoration: none;
+  color: #fff;
+  transition: 0.2s;
+}
+
+/* Button Colors */
+.btn-activate { background: #28a745; }
+.btn-block { background: #dc3545; }
+.btn-delete { background: #ffc107; color: #000; }
+.btn-reset { background: #6c757d; }
+
+.profile-actions a:hover {
+  opacity: 0.85;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
