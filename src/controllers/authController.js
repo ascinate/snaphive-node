@@ -105,10 +105,15 @@ const login = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
-
     if (user.isDeleted) {
       return res.status(403).json({
         message: "Account deactivated. Please contact support.",
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        message: "Account blocked by admin.",
       });
     }
 
@@ -122,6 +127,9 @@ const login = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
+
+    user.lastLogin = new Date();
+    await user.save();
 
     const token = jwt.sign(
       { id: user._id },
@@ -143,6 +151,7 @@ const login = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 
 
