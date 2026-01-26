@@ -76,15 +76,19 @@
         </div>
         <% } %>
     </div>
-    <div id="userModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5)">
-      <div style="background:#fff; width:500px; margin:80px auto; padding:20px; position:relative">
-        <h3>User Profile</h3>
+    <!-- User Profile Modal -->
+    <div id="userModal" class="modal-overlay">
+      <div class="modal-card">
+        <button class="modal-close" onclick="closeUserModal()">×</button>
 
-        <div id="modalContent">Loading...</div>
+        <h3 class="modal-title">User Profile</h3>
 
-        <button onclick="closeUserModal()">Close</button>
+        <div id="modalContent" class="modal-content">
+          Loading...
+        </div>
       </div>
     </div>
+
 
 
 
@@ -94,38 +98,65 @@
 
       <script>
         async function openUserModal(userId) {
-          document.getElementById("userModal").style.display = "block";
+          document.getElementById("userModal").style.display = "flex";
           document.getElementById("modalContent").innerHTML = "Loading...";
 
           const res = await fetch(`/user/profile/${userId}`);
           const data = await res.json();
-
           const u = data.user;
 
           document.getElementById("modalContent").innerHTML = `
-      <img src="${u.profileImage || '/images/avatar.png'}" width="80" /><br/><br/>
+      <div class="profile-header">
+        <img src="${u.profileImage || "/images/avatar.png"}" />
+        <div>
+          <div class="profile-name">${u.name || "—"}</div>
+          <div class="profile-email">${u.email}</div>
+        </div>
+      </div>
 
-      <strong>Name:</strong> ${u.name || "—"}<br/>
-      <strong>Email:</strong> ${u.email}<br/>
-      <strong>Signup Date:</strong> ${new Date(u.createdAt).toLocaleDateString()}<br/>
-      <strong>Device:</strong> ${u.deviceType}<br/>
-      <strong>Last Login:</strong> ${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : "—"}<br/>
-      <strong>Hives Created:</strong> ${data.hiveCount}<br/>
-      <strong>Status:</strong>
-${!u.isDeleted ? `
-  <a href="/user/toggle/${u._id}">
-    ${u.isActive ? "Block User" : "Activate User"}
-  </a>
-  |
-  <a href="/user/delete/${u._id}" onclick="return confirm('Soft delete user?')">
-    Soft Delete
-  </a>
-` : `<em>User is deleted</em>`}
+      <div class="profile-grid">
+        <div class="profile-item">
+          <span>Signup Date</span>
+          <strong>${new Date(u.createdAt).toLocaleDateString()}</strong>
+        </div>
 
-      |
-      <a href="/user/reset/${u._id}">
-        Reset Account
-      </a>
+        <div class="profile-item">
+          <span>Device</span>
+          <strong>${u.deviceType || "—"}</strong>
+        </div>
+
+        <div class="profile-item">
+          <span>Last Login</span>
+          <strong>${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : "—"}</strong>
+        </div>
+
+        <div class="profile-item">
+          <span>Hives Created</span>
+          <strong>${data.hiveCount}</strong>
+        </div>
+      </div>
+
+      <div class="profile-actions">
+        ${!u.isDeleted
+              ? `
+              <a class="${u.isActive ? "btn-block" : "btn-activate"}"
+                 href="/user/toggle/${u._id}">
+                ${u.isActive ? "Block User" : "Activate User"}
+              </a>
+
+              <a class="btn-delete"
+                 href="/user/delete/${u._id}"
+                 onclick="return confirm('Soft delete user?')">
+                Soft Delete
+              </a>
+            `
+              : `<em>User is deleted</em>`
+            }
+
+        <a class="btn-reset" href="/user/reset/${u._id}">
+          Reset Account
+        </a>
+      </div>
     `;
         }
 
