@@ -311,13 +311,22 @@ const softDeleteUser = async (req, res) => {
   res.redirect("/user");
 };
 const resetUserAccount = async (req, res) => {
-  await Hive.deleteMany({ user: req.params.id });
-  await User.findByIdAndUpdate(req.params.id, {
-    isVerified: false,
-    lastLogin: null,
-  });
-  res.redirect("/user");
+ try {
+    await User.findByIdAndUpdate(req.params.id, {
+      isDeleted: false,
+    });
+
+    res.redirect("/user");
+  } catch (err) {
+    console.error("Restore user error:", err);
+    res.status(500).send("Failed to restore user");
+  }
 };
+
+
+
+
+
 
 
 
