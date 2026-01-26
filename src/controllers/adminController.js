@@ -286,6 +286,41 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+const getUserProfileAdmin = async (req, res) => {
+  const userId = req.params.id;
+
+  const user = await User.findById(userId)
+    .select("-password -otp -otpExpires")
+    .lean();
+
+  const hiveCount = await Hive.countDocuments({ user: userId });
+
+  res.json({
+    user,
+    hiveCount,
+  });
+};
+const toggleUser = async (req, res) => {
+  const user = await User.findById(req.params.id);
+  user.isActive = !user.isActive;
+  await user.save();
+  res.redirect("/user");
+};
+const softDeleteUser = async (req, res) => {
+  await User.findByIdAndUpdate(req.params.id, { isDeleted: true });
+  res.redirect("/user");
+};
+const resetUserAccount = async (req, res) => {
+  await Hive.deleteMany({ user: req.params.id });
+  await User.findByIdAndUpdate(req.params.id, {
+    isVerified: false,
+    lastLogin: null,
+  });
+  res.redirect("/user");
+};
+
+
+
 module.exports = {
   getAllAdmins,
   getAdminById,
@@ -297,5 +332,9 @@ module.exports = {
   getAllHives,
   forceExpireHive,
   getAllUsers,
-  deleteHives
+  deleteHives,
+  getUserProfileAdmin,
+  toggleUser,
+  softDeleteUser,
+  resetUserAccount
 };
