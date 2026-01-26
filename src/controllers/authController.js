@@ -60,7 +60,7 @@ const register = async (req, res) => {
     const user = await User.create({ name, email, password, otp, otpExpires });
     await sendOTPEmail(email, otp);
     res.status(201).json({
-    message: "OTP sent to your email. Please verify to complete registration.",
+      message: "OTP sent to your email. Please verify to complete registration.",
       user: { id: user._id, email },
     });
   } catch (err) {
@@ -86,34 +86,8 @@ const verifyOTP = async (req, res) => {
       expiresIn: "7d",
     });
 
-    res.json({ 
-      message: "Email verified successfully", 
-      token,
-      user: { id: user._id, name: user.name, email: user.email }, 
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-
-const login = async (req, res) => { 
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Invalid email or password" });
-    if (!user.isVerified) {
-      return res.status(403).json({
-        message: "Please verify your email before logging in.",
-      });
-    }
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid email or password" });
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
     res.json({
-      message: "Login success",
+      message: "Email verified successfully",
       token,
       user: { id: user._id, name: user.name, email: user.email },
     });
@@ -121,6 +95,55 @@ const login = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    if (user.isDeleted) {
+      return res.status(403).json({
+        message: "Account deactivated. Please contact support.",
+      });
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({
+        message: "Please verify your email before logging in.",
+      });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      message: "Login success",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 
 
 const forgotPassword = async (req, res) => {
@@ -154,26 +177,26 @@ const forgotPassword = async (req, res) => {
 };
 
 
-  const resetPassword = async (req, res) => {
-    try {
-      const { email, otp, newPassword } = req.body;
-      const user = await User.findOne({ email });
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const user = await User.findOne({ email });
 
-      if (!user) return res.status(400).json({ message: "User not found" });
-      if (user.otp !== otp) return res.status(400).json({ message: "Invalid OTP" });
-      if (user.otpExpires < Date.now()) return res.status(400).json({ message: "OTP expired" });
-      user.password = newPassword;
-      user.otp = undefined;
-      user.otpExpires = undefined;
-      await user.save();
+    if (!user) return res.status(400).json({ message: "User not found" });
+    if (user.otp !== otp) return res.status(400).json({ message: "Invalid OTP" });
+    if (user.otpExpires < Date.now()) return res.status(400).json({ message: "OTP expired" });
+    user.password = newPassword;
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
 
-      res.json({ message: "Password reset successful" });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-  };
+    res.json({ message: "Password reset successful" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
-  const resendOTP = async (req, res) => {
+const resendOTP = async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
@@ -184,7 +207,7 @@ const forgotPassword = async (req, res) => {
     user.otpExpires = Date.now() + 5 * 60 * 1000;
     await user.save();
 
-  
+
     await sendEmail(
       email,
       "SnapHive OTP Resend Request",
@@ -230,29 +253,29 @@ const updateProfile = async (req, res) => {
         expires: "03-09-2491",
       });
 
-    if (user.profileImage) {
-      try {
-        let oldFilePath = null;
-        const imageUrl = user.profileImage;
+      if (user.profileImage) {
+        try {
+          let oldFilePath = null;
+          const imageUrl = user.profileImage;
 
-        if (imageUrl.includes("/o/")) {
-          const parts = imageUrl.split("/o/");
-          oldFilePath = decodeURIComponent(parts[1].split("?")[0]);
-        }
+          if (imageUrl.includes("/o/")) {
+            const parts = imageUrl.split("/o/");
+            oldFilePath = decodeURIComponent(parts[1].split("?")[0]);
+          }
 
-        else if (imageUrl.includes("/profile_images/")) {
-          const parts = imageUrl.split("/profile_images/");
-          oldFilePath = `profile_images/${parts[1].split("?")[0]}`;
-        }
+          else if (imageUrl.includes("/profile_images/")) {
+            const parts = imageUrl.split("/profile_images/");
+            oldFilePath = `profile_images/${parts[1].split("?")[0]}`;
+          }
 
-        if (oldFilePath) {
-          await bucket.file(oldFilePath).delete({ ignoreNotFound: true });
-          console.log("✅ Old image deleted:", oldFilePath);
+          if (oldFilePath) {
+            await bucket.file(oldFilePath).delete({ ignoreNotFound: true });
+            console.log("✅ Old image deleted:", oldFilePath);
+          }
+        } catch (err) {
+          console.log("⚠️ Old image delete failed:", err.message);
         }
-      } catch (err) {
-        console.log("⚠️ Old image delete failed:", err.message);
       }
-    }
 
 
       imageUrl = url;
