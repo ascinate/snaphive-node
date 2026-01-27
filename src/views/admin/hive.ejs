@@ -4,25 +4,31 @@
     <div class="container">
 
       <!-- Filters -->
-      <form method="GET" class="mb-3">
-        <input type="text" name="search" placeholder="Search Hive name or ID" value="<%= query.search || '' %>">
+      <form method="GET" class="hive-filter">
+        <div class="hive-filter-row">
+          <input type="text" name="search" placeholder="Search Hive name or ID" value="<%= query.search || '' %>"
+            class="hive-filter-input" />
 
-        <select name="privacy">
-          <option value="">All Privacy</option>
-          <option value="automatic">Public</option>
-          <option value="approval">Private</option>
-        </select>
+          <select name="privacy" class="hive-filter-select">
+            <option value="">All Privacy</option>
+            <option value="automatic">Public</option>
+            <option value="approval">Private</option>
+          </select>
 
-        <input type="date" name="date" value="<%= query.date || '' %>">
+          <input type="date" name="date" value="<%= query.date || '' %>" class="hive-filter-date" />
 
-        <button type="submit">Filter</button>
+          <button type="submit" class="hive-filter-btn">
+            Filter
+          </button>
+        </div>
       </form>
+
 
       <!-- Hive Table -->
       <table border="1" width="100%" cellpadding="10">
         <thead>
           <tr>
-            
+
             <th>#</th>
             <th>Hive Name</th>
             <th>Owner</th>
@@ -35,44 +41,78 @@
         </thead>
 
         <tbody>
-          <% hives.forEach((hive, index)=> { %>
-            <tr>
-             
-              <td>
-                <%= index + 1 %>
-              </td>
-              <td>
-                <%= hive.hiveName %>
-              </td>
-              <td>
-                <%= hive.user?.name || "N/A" %><br>
-                  <small>
-                    <%= hive.user?.email %>
-                  </small>
-              </td>
-              <td>
-                <%= hive.privacyMode %>
-              </td>
-              <td>
-                <%= hive.images.length %>
-              </td>
-              <td>
-                
-              </td>
-              <td>
-                <%= hive.createdAt.toDateString() %>
-              </td>
-              <td>
-                <button onclick="openDetails('<%= hive._id %>')">View</button>
-                <button onclick="openImages('<%= hive._id %>')">Images</button>
-                <button onclick="openStatus('<%= hive._id %>')">Status</button>
-                <button onclick="openFlag('<%= hive._id %>')">Flag</button>
-              </td>
+          <% if( hives && hives.length>0 ) { %>
 
-            </tr>
-            <% }) %>
+            <% hives.forEach((hive, index)=> { %>
+              <tr>
+
+                <td>
+                  <%= index + 1 %>
+                </td>
+                <td>
+                  <%= hive.hiveName %>
+                </td>
+                <td>
+                  <%= hive.user?.name || "N/A" %><br>
+                    <small>
+                      <%= hive.user?.email %>
+                    </small>
+                </td>
+                <td>
+                  <%= hive.privacyMode %>
+                </td>
+                <td>
+                  <%= hive.images.length %>
+                </td>
+                <td>
+                  <% if (hive.status==="active" ) { %>
+                    <span class="status status-active">Active</span>
+                    <% } else if (hive.status==="hidden" ) { %>
+                      <span class="status status-hidden">Hidden</span>
+                      <% } else if (hive.status==="deleted" ) { %>
+                        <span class="status status-deleted">Deleted</span>
+                        <% } else { %>
+                          <span class="status">—</span>
+                          <% } %>
+                </td>
+
+                <td>
+                  <%= hive.createdAt.toDateString() %>
+                </td>
+                <td class="action-buttons">
+                  <button class="btn btn-view" onclick="openDetails('<%= hive._id %>')">
+                    View
+                  </button>
+
+                  <button class="btn btn-images" onclick="openImages('<%= hive._id %>')">
+                    Images
+                  </button>
+
+                  <button class="btn btn-status" onclick="openStatus('<%= hive._id %>', <%= pagination.currentPage %>)">
+                    Status
+                  </button>
+
+                  <button class="btn btn-flag" onclick="openFlag('<%= hive._id %>')">
+                    Flag
+                  </button>
+                </td>
+
+
+              </tr>
+              <% }) %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="8" style="text-align:center; padding:20px;">
+                      No hives found.
+                    </td>
+                  </tr>
+                  <% } %>
         </tbody>
       </table>
+
+
+
+
       <!-- Pagination -->
       <% if (pagination.totalPages> 1) { %>
         <div style="margin-top:20px; text-align:center;">
@@ -112,36 +152,35 @@
 
 
     <%- include("../components/adminFooter") %>
-    <script>
-  const modal = document.getElementById("adminModal");
-  const modalTitle = document.getElementById("modalTitle");
-  const modalBody = document.getElementById("modalBody");
+      <script>
+        const modal = document.getElementById("adminModal");
+        const modalTitle = document.getElementById("modalTitle");
+        const modalBody = document.getElementById("modalBody");
 
-  function openModal(title, content) {
-    modalTitle.innerText = title;
-    modalBody.innerHTML = content;
-    modal.style.display = "block";
-  }
+        function openModal(title, content) {
+          modalTitle.innerText = title;
+          modalBody.innerHTML = content;
+          modal.style.display = "block";
+        }
 
-  function closeModal() {
-    modal.style.display = "none";
-    modalBody.innerHTML = "";
-  }
+        function closeModal() {
+          modal.style.display = "none";
+          modalBody.innerHTML = "";
+        }
 
 
- async function openDetails(hiveId) {
-  const res = await fetch(`/hive/${hiveId}`);
-  const { hive } = await res.json();
+        async function openDetails(hiveId) {
+          const res = await fetch(`/hive/${hiveId}`);
+          const { hive } = await res.json();
 
-  openModal("Hive Details", `
+          openModal("Hive Details", `
     <div class="hive-modal">
       
       <div class="hive-cover">
-        ${
-          hive.coverImage
-            ? `<img src="${hive.coverImage}" alt="Hive Cover">`
-            : `<div class="no-cover">No Cover Image</div>`
-        }
+        ${hive.coverImage
+              ? `<img src="${hive.coverImage}" alt="Hive Cover">`
+              : `<div class="no-cover">No Cover Image</div>`
+            }
       </div>
 
       <div class="hive-body">
@@ -179,29 +218,29 @@
       </div>
     </div>
   `);
-}
+        }
 
 
 
-async function openImages(hiveId) {
-  const res = await fetch(`/hive/${hiveId}/images`);
-  const { images } = await res.json();
+        async function openImages(hiveId) {
+          const res = await fetch(`/hive/${hiveId}/images`);
+          const { images } = await res.json();
 
-  if (!images.length) {
-    openModal("Hive Images", `
+          if (!images.length) {
+            openModal("Hive Images", `
       <div class="empty-state">
         No images found for this Hive
       </div>
     `);
-    return;
-  }
+            return;
+          }
 
-  let html = `
+          let html = `
     <div class="hive-images-grid">
   `;
 
-  images.forEach((img) => {
-    html += `
+          images.forEach((img) => {
+            html += `
       <div class="image-card">
         <img src="${img}" alt="Hive Image" />
 
@@ -212,52 +251,66 @@ async function openImages(hiveId) {
         </button>
       </div>
     `;
-  });
+          });
 
-  html += `</div>`;
+          html += `</div>`;
 
-  openModal("Hive Images", html);
-}
+          openModal("Hive Images", html);
+        }
 
-async function removeHiveImage(hiveId, imageUrl) {
-  if (!confirm("Remove this image from Hive?")) return;
+        async function removeHiveImage(hiveId, imageUrl) {
+          if (!confirm("Remove this image from Hive?")) return;
 
-  const res = await fetch(`/hive/${hiveId}/image`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ image: imageUrl }),
-  });
+          const res = await fetch(`/hive/${hiveId}/image`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ image: imageUrl }),
+          });
 
-  if (res.ok) {
-    openImages(hiveId); // refresh modal
-  } else {
-    alert("Failed to remove image");
-  }
-}
+          if (res.ok) {
+            openImages(hiveId); // refresh modal
+          } else {
+            alert("Failed to remove image");
+          }
+        }
 
 
-  function openStatus(hiveId) {
-    openModal("Change Hive Status", `
-      <form method="POST" action="/hive/${hiveId}/status">
-        <select name="status">
-          <option value="active">Active</option>
-          <option value="hidden">Hidden</option>
-          <option value="deleted">Deleted</option>
-        </select>
-        <button type="submit">Update</button>
-      </form>
-    `);
-  }
+        function openStatus(hiveId, currentPage) {
+          openModal(
+            "Change Hive Status",
+            `
+    <form method="POST" action="/hive/${hiveId}/status" class="status-form">
+      <input type="hidden" name="page" value="${currentPage}" />
 
-  // 4️⃣ Flag Hive
-  function openFlag(hiveId) {
-    openModal("Flag Hive", `
+      <label class="status-label">Select Status</label>
+
+      <select name="status" required class="status-select">
+        <option value="active">Active</option>
+        <option value="hidden">Hidden</option>
+        <option value="deleted">Deleted</option>
+      </select>
+
+      <div class="status-actions">
+        <button type="submit" class="status-btn">
+          Update Status
+        </button>
+      </div>
+    </form>
+    `
+          );
+        }
+
+
+
+        // 4️⃣ Flag Hive
+        function openFlag(hiveId) {
+          openModal("Flag Hive", `
       <form method="POST" action="/hive/${hiveId}/flag">
         <textarea name="reason" placeholder="Reason" required></textarea>
         <button type="submit">Flag</button>
       </form>
     `);
-  }
-</script>
+        }
+      </script>

@@ -236,18 +236,18 @@ const removeHiveImage = async (req, res) => {
 };
 
 const updateHiveStatus = async (req, res) => {
-  const { status } = req.body;
-
-  if (!["active", "hidden", "deleted"].includes(status)) {
-    return res.status(400).send("Invalid status");
-  }
+  const { status, page } = req.body;
 
   await Hive.findByIdAndUpdate(req.params.id, {
-    status: status,
+    status,
   });
 
-  res.redirect("/admin/hive");
+  res.redirect(`/hive?page=${page}`);
 };
+
+
+
+
 
 
  const flagHive = async (req, res) => {

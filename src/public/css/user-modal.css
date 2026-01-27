@@ -289,3 +289,194 @@
 }
 
 
+/* filter section form */
+
+.hive-filter {
+  margin-bottom: 20px;
+}
+
+.hive-filter-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+.hive-filter-input,
+.hive-filter-select,
+.hive-filter-date {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 180px;
+}
+
+.hive-filter-input {
+  flex: 1;
+}
+
+.hive-filter-select {
+  min-width: 160px;
+}
+
+.hive-filter-date {
+  min-width: 160px;
+}
+
+.hive-filter-btn {
+  padding: 10px 18px;
+  background-color: #4f46e5; /* indigo */
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.hive-filter-btn:hover {
+  background-color: #4338ca;
+}
+
+/* status modal */
+
+
+/* Status Modal Form */
+.status-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 10px 0;
+}
+
+.status-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.status-select {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
+.status-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.status-btn {
+  padding: 10px 18px;
+  background-color: #4f46e5;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.status-btn:hover {
+  background-color: #4338ca;
+}
+
+.status-btn:active {
+  transform: scale(0.98);
+}
+
+
+/* color action button */
+
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Base button */
+.btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  color: #ffffff;
+}
+
+/* View — calm blue */
+.btn-view {
+  background-color: #3b82f6;
+}
+.btn-view:hover {
+  background-color: #2563eb;
+}
+
+/* Images — soft teal */
+.btn-images {
+  background-color: #14b8a6;
+}
+.btn-images:hover {
+  background-color: #0d9488;
+}
+
+/* Status — muted amber */
+.btn-status {
+  background-color: #f59e0b;
+}
+.btn-status:hover {
+  background-color: #d97706;
+}
+
+/* Flag — gentle red (not harsh) */
+.btn-flag {
+  background-color: #ef4444;
+}
+.btn-flag:hover {
+  background-color: #dc2626;
+}
+
+
+.status {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  display: inline-block;
+}
+
+.status-active {
+  background: #e6f4ea;
+  color: #137333; /* green */
+}
+
+.status-hidden {
+  background: #fff4e5;
+  color: #b45309; /* orange */
+}
+
+.status-deleted {
+  background: #fde8e8;
+  color: #b91c1c; /* red */
+}
+
+
+
