@@ -1,13 +1,20 @@
 const express = require("express");
-const { getAllHives,forceExpireHive,deleteHives } = require("../controllers/adminController");
+const { getAllHives,getHiveDetails,getHiveImages,updateHiveStatus,flagHive,removeHiveImage } = require("../controllers/adminController");
 const adminAuth = require("../middleware/adminAuth");
 
 
 const router = express.Router();
 
 router.get("/", adminAuth,getAllHives);
-router.post("/expire/:id", adminAuth, forceExpireHive);
-router.delete("/", adminAuth, deleteHives);
-router.delete("/:id", adminAuth, deleteHives); 
+router.get("/:id", adminAuth, getHiveDetails);
+router.get("/:id/images", adminAuth, getHiveImages);
+router.delete(
+  "/:id/image",
+  adminAuth, removeHiveImage 
+);
+router.post("/:id/status", adminAuth, updateHiveStatus);
+router.post("/:id/flag", adminAuth, flagHive);
+
+
 
 module.exports = router;

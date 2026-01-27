@@ -1,8 +1,8 @@
 const Admin = require("../models/Admin");
 const Hive = require("../models/Hive");
 const User = require("../models/User");
-
-
+const mongoose = require("mongoose");
+const PAGE_LIMIT = 10;
 
 /* -------------------- GET ALL ADMINS -------------------- */
 const getAllAdmins = async (req, res) => {
@@ -142,60 +142,128 @@ const logoutAdmin = (req, res) => {
 
 
 /* -------------------- hive manage -------------------- */
-
 const getAllHives = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = 10;
-    const skip = (page - 1) * limit;
-    const search = req.query.search || "";
+ try {
+    const { search, user, privacy, date, page = 1 } = req.query;
 
-   
-    const query = search
-      ? {
-          hiveName: { $regex: search, $options: "i" },
-        }
-      : {};
+    let filter = {};
+    let orConditions = [];
 
-    const totalHives = await Hive.countDocuments(query);
+    if (search && search.trim() !== "") {
+      orConditions.push({
+        hiveName: { $regex: search.trim(), $options: "i" }
+      });
 
-    const hives = await Hive.find(query)
+      if (mongoose.Types.ObjectId.isValid(search.trim())) {
+        orConditions.push({ _id: search.trim() });
+      }
+    }
+
+    if (orConditions.length > 0) filter.$or = orConditions;
+    if (user && mongoose.Types.ObjectId.isValid(user)) filter.user = user;
+    if (privacy) filter.privacyMode = privacy;
+
+    if (date) {
+      const start = new Date(date);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      filter.createdAt = { $gte: start, $lte: end };
+    }
+
+    const currentPage = parseInt(page);
+    const skip = (currentPage - 1) * PAGE_LIMIT;
+
+    const totalHives = await Hive.countDocuments(filter);
+
+    const hives = await Hive.find(filter)
       .populate("user", "name email")
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(PAGE_LIMIT);
 
-    const totalPages = Math.ceil(totalHives / limit);
+    const totalPages = Math.ceil(totalHives / PAGE_LIMIT);
 
     res.render("admin/hive", {
-      title: "Manage Hives",
+      title: "Hive Management",
       hives,
-      currentPage: page,
-      totalPages,
-      search,
+      query: req.query,
+      pagination: {
+        totalHives,
+        totalPages,
+        currentPage,
+      }
     });
+
   } catch (error) {
-    console.error("Get Hives Error:", error);
-    res.status(500).send("Failed to load hives");
+    console.error("🔥 ADMIN HIVE ERROR 🔥", error);
+    res.status(500).send(error.message);
   }
 };
 
+const getHiveDetails = async (req, res) => {
+  const hive = await Hive.findById(req.params.id)
+    .populate("user", "name email");
 
-const forceExpireHive = async (req, res) => {
+  if (!hive) return res.status(404).json({ success: false });
+
+  res.json({ success: true, hive });
+};
+ const getHiveImages = async (req, res) => {
+  const hive = await Hive.findById(req.params.id);
+
+  if (!hive) return res.status(404).json({ success: false });
+
+  res.json({ success: true, images: hive.images });
+};
+
+const removeHiveImage = async (req, res) => {
   try {
-    const hiveId = req.params.id;
+    const { image } = req.body;
 
-    await Hive.findByIdAndUpdate(hiveId, {
-      isExpired: true,
-      expiryDate: new Date(),
+    if (!image) {
+      return res.status(400).json({ success: false, message: "Image is required" });
+    }
+
+    await Hive.findByIdAndUpdate(req.params.id, {
+      $pull: { images: image }
     });
 
-    res.redirect("/hive");
+    res.json({ success: true });
   } catch (error) {
-    console.error("Expire Hive Error:", error);
-    res.status(500).send("Failed to expire hive");
+    console.error("🔥 REMOVE HIVE IMAGE ERROR 🔥", error);
+    res.status(500).json({ success: false });
   }
 };
+
+const updateHiveStatus = async (req, res) => {
+  const { status } = req.body;
+
+  if (!["active", "hidden", "deleted"].includes(status)) {
+    return res.status(400).send("Invalid status");
+  }
+
+  await Hive.findByIdAndUpdate(req.params.id, {
+    status: status,
+  });
+
+  res.redirect("/admin/hive");
+};
+
+
+ const flagHive = async (req, res) => {
+  await Hive.findByIdAndUpdate(req.params.id, {
+    isFlagged: true,
+    flagReason: req.body.reason
+  });
+
+  res.redirect("/admin/hive");
+};
+
+
+
+
+
+
 
 const deleteHives = async (req, res) => {
   try {
@@ -325,11 +393,6 @@ const resetUserAccount = async (req, res) => {
 
 
 
-
-
-
-
-
 module.exports = {
   getAllAdmins,
   getAdminById,
@@ -339,7 +402,11 @@ module.exports = {
   loginAdmin,
   logoutAdmin,
   getAllHives,
-  forceExpireHive,
+  flagHive, 
+  updateHiveStatus,
+  getHiveImages,
+  removeHiveImage,
+  getHiveDetails,
   getAllUsers,
   deleteHives,
   getUserProfileAdmin,

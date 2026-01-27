@@ -6,6 +6,11 @@ const hiveSchema = new mongoose.Schema({
   hiveName: { type: String, required: true },
   description: { type: String },
   privacyMode: { type: String, enum: ["automatic", "approval"], default: "automatic" },
+    status: {
+    type: String,
+    enum: ["active", "hidden", "deleted"],
+    default: "active",
+  },
   isTemporary: { type: Boolean, default: false },
   eventDate: { type: Date },
   startTime: { type: String },

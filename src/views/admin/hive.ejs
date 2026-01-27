@@ -1,163 +1,263 @@
-<%- include("../components/adminHeader", { title: title }) %>
-<%- include("../components/adminSidebar") %>
+<%- include("../components/adminHeader", { title }) %>
+  <%- include("../components/adminSidebar") %>
 
-<div class="container">
-  <h2>🐝 Hive Management</h2>
+    <div class="container">
 
-  <form method="GET" action="/hive" style="margin-bottom:15px;">
-  <input
-    type="text"
-    name="search"
-    value="<%= search || '' %>"
-    placeholder="Search hive name..."
-    style="padding:6px;width:250px;"
-  />
-  <button type="submit">Search</button>
-</form>
+      <!-- Filters -->
+      <form method="GET" class="mb-3">
+        <input type="text" name="search" placeholder="Search Hive name or ID" value="<%= query.search || '' %>">
 
-  <button
-    onclick="deleteSelectedHives()"
-    style="background:#b30000;color:#fff;padding:8px 12px;margin-bottom:10px;"
-  >
-    🗑 Delete Selected
-  </button>
+        <select name="privacy">
+          <option value="">All Privacy</option>
+          <option value="automatic">Public</option>
+          <option value="approval">Private</option>
+        </select>
 
-  <table border="1" width="100%" cellpadding="10">
-    <thead>
-      <tr>
-        <th>
-          <input type="checkbox" id="selectAll">
-        </th>
+        <input type="date" name="date" value="<%= query.date || '' %>">
 
-        <th>#</th>
-        <th>Hive Name</th>
-        <th>Owner</th>
-        <th>Privacy</th>
-        <th>Temporary</th>
-        <th>Members</th>
-        <th>Expired</th>
-        <th>Created</th>
-        <th>Action</th>
-      </tr>
-    </thead>
+        <button type="submit">Filter</button>
+      </form>
 
-    <tbody>
-      <% if (!hives || hives.length === 0) { %>
-        <tr>
-          <td colspan="9" align="center">No hives found</td>
-        </tr>
-      <% } %>
+      <!-- Hive Table -->
+      <table border="1" width="100%" cellpadding="10">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="selectAll"></th>
+            <th>#</th>
+            <th>Hive Name</th>
+            <th>Owner</th>
+            <th>Privacy</th>
+            <th>Images</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
 
-      <% hives.forEach((hive, index) => { %>
-        <tr>
-          <td>
-            <input type="checkbox" class="hiveCheckbox" value="<%= hive._id %>">
-          </td>
+        <tbody>
+          <% hives.forEach((hive, index)=> { %>
+            <tr>
+              <td><input type="checkbox" value="<%= hive._id %>"></td>
+              <td>
+                <%= index + 1 %>
+              </td>
+              <td>
+                <%= hive.hiveName %>
+              </td>
+              <td>
+                <%= hive.user?.name || "N/A" %><br>
+                  <small>
+                    <%= hive.user?.email %>
+                  </small>
+              </td>
+              <td>
+                <%= hive.privacyMode %>
+              </td>
+              <td>
+                <%= hive.images.length %>
+              </td>
+              <td>
+                
+              </td>
+              <td>
+                <%= hive.createdAt.toDateString() %>
+              </td>
+              <td>
+                <button onclick="openDetails('<%= hive._id %>')">View</button>
+                <button onclick="openImages('<%= hive._id %>')">Images</button>
+                <button onclick="openStatus('<%= hive._id %>')">Status</button>
+                <button onclick="openFlag('<%= hive._id %>')">Flag</button>
+              </td>
 
-          <td><%= (currentPage - 1) * 10 + index + 1 %></td>
-          <td><%= hive.hiveName %></td>
-          <td>
-            <%= hive.user?.name || "N/A" %><br>
-            <small><%= hive.user?.email %></small>
-          </td>
-          <td><%= hive.privacyMode %></td>
-          <td><%= hive.isTemporary ? "Yes" : "No" %></td>
-          <td><%= hive.members.length %></td>
-          <td style="color:<%= hive.isExpired ? 'red' : 'green' %>">
-            <%= hive.isExpired ? "Expired" : "Active" %>
-          </td>
-          <td><%= hive.createdAt.toDateString() %></td>
-          <td>
-            <% if (!hive.isExpired) { %>
-              <form
-                action="hive/expire/<%= hive._id %>"
-                method="POST"
-                onsubmit="return confirm('Expire this hive?')"
-              >
-                <button style="background:red;color:#fff">
-                  Force Expire
-                </button>
-              </form>
-            <% } else { %>
-              —
+            </tr>
+            <% }) %>
+        </tbody>
+      </table>
+      <!-- Pagination -->
+      <% if (pagination.totalPages> 1) { %>
+        <div style="margin-top:20px; text-align:center;">
+
+          <% if (pagination.currentPage> 1) { %>
+            <a href="?<%= new URLSearchParams({ ...query, page: pagination.currentPage - 1 }).toString() %>">
+              ◀ Prev
+            </a>
             <% } %>
-          </td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
-  <% if (totalPages > 1) { %>
-  <div style="margin-top:20px;">
-    <% for (let i = 1; i <= totalPages; i++) { %>
-      <a
-        href="/hive?page=<%= i %>&search=<%= search || '' %>"
-        style="
-          margin-right:5px;
-          padding:6px 10px;
-          text-decoration:none;
-          border:1px solid #ccc;
-          <%= currentPage === i ? 'background:#333;color:#fff;' : '' %>
-        "
-      >
-        <%= i %>
-      </a>
-    <% } %>
-  </div>
-<% } %>
 
-</div>
-<script>
-  // Select all
-  document.getElementById("selectAll")?.addEventListener("change", function () {
-    document
-      .querySelectorAll(".hiveCheckbox")
-      .forEach(cb => (cb.checked = this.checked));
+              <% for (let i=1; i <=pagination.totalPages; i++) { %>
+                <a href="?<%= new URLSearchParams({ ...query, page: i }).toString() %>"
+                  style="margin:0 5px; <%= pagination.currentPage === i ? 'font-weight:bold;' : '' %>">
+                  <%= i %>
+                </a>
+                <% } %>
+
+                  <% if (pagination.currentPage < pagination.totalPages) { %>
+                    <a href="?<%= new URLSearchParams({ ...query, page: pagination.currentPage + 1 }).toString() %>">
+                      Next ▶
+                    </a>
+                    <% } %>
+
+        </div>
+        <% } %>
+
+
+    </div>
+    <div id="adminModal"
+      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6);">
+      <div style="background:#fff; width:600px; margin:5% auto; padding:20px; position:relative;">
+        <h3 id="modalTitle"></h3>
+        <div id="modalBody"></div>
+        <button onclick="closeModal()">Close</button>
+      </div>
+    </div>
+
+
+    <%- include("../components/adminFooter") %>
+    <script>
+  const modal = document.getElementById("adminModal");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalBody = document.getElementById("modalBody");
+
+  function openModal(title, content) {
+    modalTitle.innerText = title;
+    modalBody.innerHTML = content;
+    modal.style.display = "block";
+  }
+
+  function closeModal() {
+    modal.style.display = "none";
+    modalBody.innerHTML = "";
+  }
+
+
+ async function openDetails(hiveId) {
+  const res = await fetch(`/hive/${hiveId}`);
+  const { hive } = await res.json();
+
+  openModal("Hive Details", `
+    <div class="hive-modal">
+      
+      <div class="hive-cover">
+        ${
+          hive.coverImage
+            ? `<img src="${hive.coverImage}" alt="Hive Cover">`
+            : `<div class="no-cover">No Cover Image</div>`
+        }
+      </div>
+
+      <div class="hive-body">
+        <div class="hive-row">
+          <span>Name</span>
+          <strong>${hive.hiveName}</strong>
+        </div>
+
+        <div class="hive-row">
+          <span>Owner</span>
+          <strong>${hive.user?.name || "N/A"}</strong>
+        </div>
+
+        <div class="hive-row">
+          <span>Email</span>
+          <strong>${hive.user?.email || "—"}</strong>
+        </div>
+
+        <div class="hive-row">
+          <span>Privacy</span>
+          <span class="badge ${hive.privacyMode}">
+            ${hive.privacyMode}
+          </span>
+        </div>
+
+        <div class="hive-row description">
+          <span>Description</span>
+          <p>${hive.description || "No description provided."}</p>
+        </div>
+
+        <div class="hive-footer">
+          Created on ${new Date(hive.createdAt).toDateString()}
+        </div>
+
+      </div>
+    </div>
+  `);
+}
+
+
+
+async function openImages(hiveId) {
+  const res = await fetch(`/hive/${hiveId}/images`);
+  const { images } = await res.json();
+
+  if (!images.length) {
+    openModal("Hive Images", `
+      <div class="empty-state">
+        No images found for this Hive
+      </div>
+    `);
+    return;
+  }
+
+  let html = `
+    <div class="hive-images-grid">
+  `;
+
+  images.forEach((img) => {
+    html += `
+      <div class="image-card">
+        <img src="${img}" alt="Hive Image" />
+
+        <button 
+          class="remove-btn"
+          onclick="removeHiveImage('${hiveId}', '${img}')">
+          ✕
+        </button>
+      </div>
+    `;
   });
 
-  // 🔥 Single delete
-  function deleteSingleHive(id) {
-    if (!confirm("Delete this hive permanently?")) return false;
+  html += `</div>`;
 
-    fetch(`/hive/${id}`, {
-      method: "DELETE",
-    })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || "Hive deleted");
-        location.reload();
-      })
-      .catch(err => alert("Delete failed"));
+  openModal("Hive Images", html);
+}
 
-    return false;
+async function removeHiveImage(hiveId, imageUrl) {
+  if (!confirm("Remove this image from Hive?")) return;
+
+  const res = await fetch(`/hive/${hiveId}/image`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ image: imageUrl }),
+  });
+
+  if (res.ok) {
+    openImages(hiveId); // refresh modal
+  } else {
+    alert("Failed to remove image");
+  }
+}
+
+
+  function openStatus(hiveId) {
+    openModal("Change Hive Status", `
+      <form method="POST" action="/hive/${hiveId}/status">
+        <select name="status">
+          <option value="active">Active</option>
+          <option value="hidden">Hidden</option>
+          <option value="deleted">Deleted</option>
+        </select>
+        <button type="submit">Update</button>
+      </form>
+    `);
   }
 
-  // 🔥 Multiple delete
-  function deleteSelectedHives() {
-    const ids = Array.from(
-      document.querySelectorAll(".hiveCheckbox:checked")
-    ).map(cb => cb.value);
-
-    if (ids.length === 0) {
-      alert("Please select at least one hive");
-      return;
-    }
-
-    if (!confirm(`Delete ${ids.length} selected hives?`)) return;
-
-    fetch("/hive", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ ids }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || "Hives deleted");
-        location.reload();
-      })
-      .catch(err => alert("Bulk delete failed"));
+  // 4️⃣ Flag Hive
+  function openFlag(hiveId) {
+    openModal("Flag Hive", `
+      <form method="POST" action="/hive/${hiveId}/flag">
+        <textarea name="reason" placeholder="Reason" required></textarea>
+        <button type="submit">Flag</button>
+      </form>
+    `);
   }
 </script>
-
-<%- include("../components/adminFooter") %>
