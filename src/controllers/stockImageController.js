@@ -59,27 +59,11 @@ const deleteStockImage = async (req, res) => {
   }
 };
 
-const toggleStockStatus = async (req, res) => {
-  try {
-    const image = await StockImage.findById(req.params.id);
-    if (!image) {
-      return res.status(404).send("Image not found");
-    }
 
-    image.isActive = !image.isActive;
-    await image.save();
-
-    res.redirect("/static-stock");
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
-  }
-};
 
 
 module.exports = {
   getAllImages,
   addStockImage,
-  deleteStockImage,
-  toggleStockStatus
+  deleteStockImage
 };
