@@ -6,8 +6,7 @@ const adminAuth = require("../middleware/adminAuth");
 const {
     getAllImages,
     addStockImage,
-    deleteStockImage,
-    toggleStockStatus
+    deleteStockImage
 } = require("../controllers/stockImageController");
 
 const fs = require("fs");
@@ -34,11 +33,7 @@ const upload = multer({ storage });
 router.get("/", adminAuth, getAllImages);
 router.post("/", adminAuth, upload.single("imageFile"), addStockImage);
 router.post("/delete/:id", adminAuth, deleteStockImage);
-router.post(
-    "/toggle-status/:id",
-    adminAuth,
-    toggleStockStatus
-);
+
 
 
 module.exports = router;

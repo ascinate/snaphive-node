@@ -63,14 +63,8 @@
                 </td>
                 <td>
                   <%= img.tags.join(", ") %></td>
-                <td>
-                    <form method=" POST" action="/static-stock/toggle-status/<%= img._id %>">
-                        <button type="submit" class="status-toggle <%= img.isActive ? 'active' : 'disabled' %>">
-                          <%= img.isActive ? 'Active' : 'Disabled' %>
-                        </button>
-                    </form>
+            <td><%= img.isActive ? " Active" : "Disabled" %>
                 </td>
-
                 <td>
                   Cover: <%= img.usage.coverAllowed ? "Yes" : "No" %><br>
                     Gallery: <%= img.usage.galleryAllowed ? "Yes" : "No" %>
