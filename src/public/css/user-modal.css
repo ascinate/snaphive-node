@@ -479,4 +479,275 @@
 }
 
 
+/* Stock Image Upload Form */
+.stock-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  max-width: 700px;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  margin-bottom: 30px;
+}
+
+/* Inputs & Select */
+.stock-form input[type="text"],
+.stock-form input[type="file"],
+.stock-form select {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  width: 100%;
+  background: #fafafa;
+  transition: all 0.2s ease;
+}
+
+.stock-form input:focus,
+.stock-form select:focus {
+  outline: none;
+  border-color: #6c63ff;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.12);
+}
+
+/* File input tweak */
+.stock-form input[type="file"] {
+  padding: 8px;
+  background: #fff;
+}
+
+/* Checkbox row */
+.stock-form label {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #444;
+}
+
+/* Submit button */
+.stock-form button {
+  grid-column: span 2;
+  padding: 12px;
+  background: linear-gradient(135deg, #6c63ff, #4f46e5);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.stock-form button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .stock-form {
+    grid-template-columns: 1fr;
+  }
+
+  .stock-form button,
+  .stock-form label {
+    grid-column: span 1;
+  }
+}
+
+/* =========================
+   Admin Page Base
+========================= */
+body {
+  background: #f4f6fb;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #333;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+/* Page Title */
+.container h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #1f2937;
+}
+
+/* =========================
+   Stock Upload Form Card
+========================= */
+.stock-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  background: #ffffff;
+  padding: 22px;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+  margin-bottom: 35px;
+}
+
+/* Inputs */
+.stock-form input[type="text"],
+.stock-form input[type="file"],
+.stock-form select {
+  padding: 11px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+  background: #fafafa;
+  transition: all 0.2s ease;
+}
+
+.stock-form input:focus,
+.stock-form select:focus {
+  outline: none;
+  border-color: #6366f1;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* Checkbox */
+.stock-form label {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+}
+
+/* Submit Button */
+.stock-form button {
+  grid-column: span 2;
+  padding: 12px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.stock-form button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(79, 70, 229, 0.35);
+}
+
+/* =========================
+   Stock Table
+========================= */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+}
+
+thead {
+  background: #f1f5f9;
+}
+
+thead th {
+  padding: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+tbody td {
+  padding: 14px;
+  font-size: 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* Image Preview */
+tbody img {
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Status text */
+tbody td:nth-child(6) {
+  font-weight: 600;
+  color: #16a34a;
+}
+
+/* Usage text */
+tbody td:nth-child(7) {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+/* =========================
+   Action Button
+========================= */
+.btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-flag {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.btn-flag:hover {
+  background: #fecaca;
+}
+
+/* Empty State */
+tbody tr td[colspan] {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* =========================
+   Responsive
+========================= */
+@media (max-width: 768px) {
+  .stock-form {
+    grid-template-columns: 1fr;
+  }
+
+  .stock-form button,
+  .stock-form label {
+    grid-column: span 1;
+  }
+
+  table {
+    font-size: 13px;
+  }
+}
+
+
+
 
