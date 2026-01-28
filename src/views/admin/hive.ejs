@@ -184,11 +184,15 @@
       </div>
 
       <div class="hive-body">
-        <div class="hive-row">
-          <span>Name</span>
-          <strong>${hive.hiveName}</strong>
-        </div>
 
+        <div class="hive-row">
+          <span>Members</span>
+          <strong>
+            ${hive.members && hive.members.length > 0
+                      ? hive.members.map(m => `${m.memberId?.name || m.email} (${m.status})`).join(', ')
+                      : "No members"}
+          </strong>
+        </div>
         <div class="hive-row">
           <span>Owner</span>
           <strong>${hive.user?.name || "N/A"}</strong>
