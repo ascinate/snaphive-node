@@ -1,0 +1,90 @@
+<%- include("../components/adminHeader", { title }) %>
+  <%- include("../components/adminSidebar") %>
+
+    <div class="container">
+
+      <!-- Upload Form -->
+      <h3>Add Stock Image</h3>
+      <form method="POST" action="/static-stock" enctype="multipart/form-data" class="stock-form">
+        <input type="text" name="title" placeholder="Title" required />
+
+        <input type="file" name="imageFile" accept="image/*" required />
+
+        <select name="category">
+          <option value="event">Event</option>
+          <option value="nature">Nature</option>
+          <option value="people">People</option>
+          <option value="corporate">Corporate</option>
+          <option value="other">Other</option>
+        </select>
+
+        <input type="text" name="tags" placeholder="tags (comma separated)" />
+
+        <label>
+          <input type="checkbox" name="coverAllowed" checked />
+          Cover allowed
+        </label>
+
+        <button type="submit">Add</button>
+      </form>
+
+
+      <!-- Table -->
+      <table border="1" width="100%" cellpadding="10">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Preview</th>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Tags</th>
+            <th>Status</th>
+            <th>Usage</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% if (stockImages && stockImages.length> 0) { %>
+            <% stockImages.forEach((img, index)=> { %>
+              <tr>
+                <td>
+                  <%= index + 1 %>
+                </td>
+                <td>
+                  <img src="/uploads/stock/<%= img.file %>" alt="<%= img.title %>" width="80" />
+                </td>
+
+                <td>
+                  <%= img.title %>
+                </td>
+                <td>
+                  <%= img.category %>
+                </td>
+                <td>
+                  <%= img.tags.join(", ") %></td>
+            <td><%= img.isActive ? " Active" : "Disabled" %>
+                </td>
+                <td>
+                  Cover: <%= img.usage.coverAllowed ? "Yes" : "No" %><br>
+                    Gallery: <%= img.usage.galleryAllowed ? "Yes" : "No" %>
+                </td>
+                <td>
+                  <form method="POST" action="/static-stock/delete/<%= img._id %>"
+                    onsubmit="return confirm('Are you sure?');">
+                    <button type="submit" class="btn btn-flag">Delete</button>
+                  </form>
+                </td>
+              </tr>
+              <% }) %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="8" style="text-align:center; padding:20px;">No stock images found.</td>
+                  </tr>
+                  <% } %>
+        </tbody>
+      </table>
+
+    </div>
+
+    <%- include("../components/adminFooter") %>

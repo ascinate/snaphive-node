@@ -15,6 +15,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const adminHiveRoutes = require("./routes/adminHiveRoutes");
 const adminUserRoutes = require("./routes/adminUserRoutes");
+const adminStockRoutes =require("./routes/adminStockRoutes");
 
 
 const app = express();
@@ -64,7 +65,8 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 /* -------------------- UPLOADS -------------------- */
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
 
 /* -------------------- PAGES -------------------- */
 
@@ -86,6 +88,8 @@ app.use("/admin", adminRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/hive", adminHiveRoutes);
 app.use("/user", adminUserRoutes);
+app.use("/static-stock", adminStockRoutes);
+
 
 
 /* -------------------- API ROUTES -------------------- */

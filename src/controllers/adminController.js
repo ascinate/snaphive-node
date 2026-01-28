@@ -1,6 +1,7 @@
 const Admin = require("../models/Admin");
 const Hive = require("../models/Hive");
 const User = require("../models/User");
+
 const mongoose = require("mongoose");
 const PAGE_LIMIT = 10;
 
@@ -391,6 +392,19 @@ const resetUserAccount = async (req, res) => {
   }
 };
 
+const getAllImages = async (req, res) => {
+try {
+   
+    res.render("admin/stock-images", {
+      title: "Stock Image Management",
+     
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
+  }
+};
+
 
 
 module.exports = {
@@ -412,5 +426,6 @@ module.exports = {
   getUserProfileAdmin,
   toggleUser,
   softDeleteUser,
-  resetUserAccount
+  resetUserAccount,
+  getAllImages
 };
