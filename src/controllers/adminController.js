@@ -203,7 +203,8 @@ const getAllHives = async (req, res) => {
 
 const getHiveDetails = async (req, res) => {
   const hive = await Hive.findById(req.params.id)
-    .populate("user", "name email");
+    .populate("user", "name email")
+    .populate("members.memberId", "name email"); 
 
   if (!hive) return res.status(404).json({ success: false });
 
