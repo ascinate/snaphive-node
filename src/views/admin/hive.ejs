@@ -61,9 +61,10 @@
                 <td>
                   <%= hive.privacyMode %>
                 </td>
-                <td>
+                <td id="image-count-<%= hive._id %>">
                   <%= hive.images.length %>
                 </td>
+
                 <td>
                   <% if (hive.status==="active" ) { %>
                     <span class="status status-active">Active</span>
@@ -142,13 +143,28 @@
 
     </div>
     <div id="adminModal"
-      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6);">
-      <div style="background:#fff; width:600px; margin:5% auto; padding:20px; position:relative;">
-        <h3 id="modalTitle"></h3>
+      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:999;">
+
+      <div style="background:#fff; width:600px; margin:5% auto; padding:20px; position:relative; border-radius:8px;">
+        <button onclick="closeModal()" style="
+        position:absolute;
+        top:12px;
+        right:12px;
+        background:transparent;
+        border:none;
+        font-size:22px;
+        cursor:pointer;
+        color:#555;
+      " title="Close">
+          ×
+        </button>
+
+        <h3 id="modalTitle" style="margin-top:0;"></h3>
         <div id="modalBody"></div>
-        <button onclick="closeModal()">Close</button>
+
       </div>
     </div>
+
 
 
     <%- include("../components/adminFooter") %>
@@ -189,8 +205,8 @@
           <span>Members</span>
           <strong>
             ${hive.members && hive.members.length > 0
-                      ? hive.members.map(m => `${m.memberId?.name || m.email} (${m.status})`).join(', ')
-                      : "No members"}
+              ? hive.members.map(m => `${m.memberId?.name || m.email} (${m.status})`).join(', ')
+              : "No members"}
           </strong>
         </div>
         <div class="hive-row">
@@ -217,7 +233,15 @@
 
         <div class="hive-footer">
           Created on ${new Date(hive.createdAt).toDateString()}
+
+          <div style="margin-top:12px;">
+            <button class="btn btn-primary btn-sm"
+              onclick="openChatManager('${hive._id}')">
+              💬 Manage Chat
+            </button>
+          </div>
         </div>
+
 
       </div>
     </div>
@@ -251,7 +275,7 @@
         <button 
           class="remove-btn"
           onclick="removeHiveImage('${hiveId}', '${img}')">
-          ✕
+            🗑
         </button>
       </div>
     `;
@@ -272,9 +296,16 @@
             },
             body: JSON.stringify({ image: imageUrl }),
           });
+          const countEl = document.getElementById(`image-count-${hiveId}`);
+          if (countEl) {
+            const current = parseInt(countEl.innerText, 10) || 0;
+            countEl.innerText = Math.max(current - 1, 0);
+          }
 
           if (res.ok) {
-            openImages(hiveId); // refresh modal
+
+            showToast("Image deleted");
+            openImages(hiveId);
           } else {
             alert("Failed to remove image");
           }
