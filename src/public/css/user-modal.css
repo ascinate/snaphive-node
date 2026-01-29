@@ -264,7 +264,7 @@
   border-radius: 50%;
   border: none;
   background: rgba(0, 0, 0, 0.6);
-  color: #fff;
+  color: #980d0d;
   font-size: 14px;
   cursor: pointer;
   opacity: 1;
@@ -274,14 +274,14 @@
 
 
 .remove-btn:hover {
-  background: #dc2626;
+  background: #ded7d7;
 }
 
 /* Empty State */
 .empty-state {
   text-align: center;
   padding: 40px;
-  color: #6b7280;
+  color: #e6ebf7;
   font-size: 14px;
 }
 

@@ -92,6 +92,12 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/hive", adminHiveRoutes);
 app.use("/user", adminUserRoutes);
 app.use("/static-stock", adminStockRoutes);
+app.get("/notifications", (req, res) => {
+  res.render("admin/notifications", {
+    title: "Notifications"
+  });
+});
+
 
 
 
