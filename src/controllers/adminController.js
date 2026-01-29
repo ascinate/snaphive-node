@@ -408,6 +408,10 @@ try {
 
 
 
+
+
+
+
 module.exports = {
   getAllAdmins,
   getAdminById,
@@ -428,5 +432,6 @@ module.exports = {
   toggleUser,
   softDeleteUser,
   resetUserAccount,
-  getAllImages
+  getAllImages,
+  
 };

@@ -267,14 +267,11 @@
   color: #fff;
   font-size: 14px;
   cursor: pointer;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.image-card:hover .remove-btn {
-  opacity: 1;
-  transform: scale(1.05);
-}
+
 
 .remove-btn:hover {
   background: #dc2626;
@@ -748,6 +745,58 @@ tbody tr td[colspan] {
   }
 }
 
+/* chat system */
+.chat-wrapper {
+  max-height: 500px;
+}
+
+.chat-box {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 10px;
+  height: 350px;
+  overflow-y: auto;
+  border-radius: 6px;
+}
+
+.chat-message {
+  background: #fff;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+}
+
+.chat-message.user {
+  border-left: 4px solid #4caf50;
+}
+
+.chat-message.admin {
+  border-left: 4px solid #ff9800;
+}
+
+.chat-meta {
+  font-size: 12px;
+  color: #777;
+}
+
+.chat-text {
+  margin-top: 4px;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #e53935;
+}
+
+.chat-danger {
+  text-align: right;
+  margin-top: 10px;
+}
 
 
 

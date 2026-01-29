@@ -18,6 +18,9 @@ const adminUserRoutes = require("./routes/adminUserRoutes");
 const adminStockRoutes =require("./routes/adminStockRoutes");
 
 
+
+
+
 const app = express();
 
 /* -------------------- DATABASE -------------------- */
@@ -89,6 +92,8 @@ app.use("/dashboard", dashboardRoutes);
 app.use("/hive", adminHiveRoutes);
 app.use("/user", adminUserRoutes);
 app.use("/static-stock", adminStockRoutes);
+
+
 
 
 
