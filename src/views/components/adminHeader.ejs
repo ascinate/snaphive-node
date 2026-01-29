@@ -88,36 +88,18 @@
                         <a href="#" class="nav-link dropdown-toggle d-flex align-items-center"
                             data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle fs-2 me-2"></i>
-                            <span class="d-none d-md-inline"><%= admin.full_name || "Guest User" %></span>
+                            <span class="d-none d-md-inline"><%= admin.full_name || "Admin" %></span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
                             <!--begin::User Image-->
                             <li class="user-header text-bg-primary">
                                 <img src="./img/user2-160x160.jpg" class="rounded-circle shadow" alt="User Image" />
                                 <p>
-                                    <%= admin.full_name || "Guest User" %> - <%= admin.email || "N/A" %><br />
+                                    <%= admin.email || "N/A" %><br />
                                             <small>Member since Nov. 2023</small>
                                 </p>
                             </li>
-                            <!--end::User Image-->
-                            <!--begin::Menu Body-->
-                            <li class="user-body">
-                                <!--begin::Row-->
-                                <div class="row">
-                                    <div class="col-4 text-center">
-                                        <a href="#">Followers</a>
-                                    </div>
-                                    <div class="col-4 text-center">
-                                        <a href="#">Sales</a>
-                                    </div>
-                                    <div class="col-4 text-center">
-                                        <a href="#">Friends</a>
-                                    </div>
-                                </div>
-                                <!--end::Row-->
-                            </li>
-                            <!--end::Menu Body-->
-                            <!--begin::Menu Footer-->
+
                             <li class="user-footer">
                                 <a href="#" class="btn btn-default btn-flat">Profile</a>
                                 <a href="/api/admins/logout" class="btn btn-default btn-flat float-end">Sign out</a>
