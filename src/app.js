@@ -28,10 +28,6 @@ connectDB();
 
 /* -------------------- MIDDLEWARE -------------------- */
 app.use(express.json({ limit: "25mb" }));
-app.use(
-  "/stock",
-  express.static(path.join(__dirname, "../uploads/stock"))
-);
 
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
@@ -60,18 +56,19 @@ app.use((req, res, next) => {
   next();
 });
 
-/* -------------------- STATIC + VIEW ENGINE -------------------- */
-// ✅ OPTION 1: serve public at ROOT
+/* -------------------- STATIC FILES -------------------- */
+//  FRONTEND + IMAGES
 app.use(express.static(path.join(__dirname, "public")));
+
+//  FRONTEND URL /stock/1.jpg
+app.use(
+  "/stock",
+  express.static(path.join(__dirname, "public/stock"))
+);
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-/* -------------------- UPLOADS -------------------- */
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-
-
-/* -------------------- PAGES -------------------- */
 
 // root → login
 app.get("/", (req, res) => {

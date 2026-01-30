@@ -19,18 +19,17 @@ const getAllImages = async (req, res) => {
 const addStockImage = async (req, res) => {
   try {
     const { title, category, tags, coverAllowed } = req.body;
-    const file = req.file;
 
-    if (!file) {
+    if (!req.file) {
       return res.status(400).send("No file uploaded");
     }
 
     const newStock = new StockImage({
       title,
-      file: file.filename,
+      file: `/stock/${req.file.filename}`,
       category,
-      tags: tags ? tags.split(",").map((t) => t.trim()) : [],
-      usage: { coverAllowed: coverAllowed ? true : false },
+      tags: tags ? tags.split(",").map(t => t.trim()) : [],
+      usage: { coverAllowed: !!coverAllowed }
     });
 
     await newStock.save();
