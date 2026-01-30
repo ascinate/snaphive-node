@@ -1,6 +1,10 @@
 const StockImage = require("../models/StockImage");
 const path = require("path");
 const fs = require("fs");
+const bucket = require("../config/firebase");
+
+
+const { v4: uuidv4 } = require("uuid");
 
 const getAllImages = async (req, res) => {
   try {
@@ -16,6 +20,8 @@ const getAllImages = async (req, res) => {
   }
 };
 
+
+
 const addStockImage = async (req, res) => {
   try {
     const { title, category, tags, coverAllowed } = req.body;
@@ -24,21 +30,38 @@ const addStockImage = async (req, res) => {
       return res.status(400).send("No file uploaded");
     }
 
+    const fileName = `stock/${uuidv4()}-${req.file.originalname}`;
+    const file = bucket.file(fileName);
+
+    // Upload to Firebase
+    await file.save(req.file.buffer, {
+      metadata: {
+        contentType: req.file.mimetype,
+      },
+      public: true,
+    });
+
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
     const newStock = new StockImage({
       title,
-      file: `/stock/${req.file.filename}`,
+      file: publicUrl, // 🔥 STORE FULL URL
       category,
       tags: tags ? tags.split(",").map(t => t.trim()) : [],
-      usage: { coverAllowed: !!coverAllowed }
+      usage: { coverAllowed: !!coverAllowed },
     });
 
     await newStock.save();
+
     res.redirect("/static-stock");
   } catch (err) {
-    console.error(err);
+    console.error("🔥 Stock upload error:", err);
     res.status(500).send("Server error");
   }
 };
+
+module.exports = { addStockImage };
+
 
 const deleteStockImage = async (req, res) => {
   try {
