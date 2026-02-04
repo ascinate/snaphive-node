@@ -87,11 +87,29 @@ function formatTo12Hour(time) {
 const saveHiveImageUrls = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userEmail = req.user.email;
     const hiveId = req.params.hiveId;
     const { images } = req.body;
 
-    const hive = await Hive.findOne({ _id: hiveId, user: userId });
-    if (!hive) return res.status(404).json({ message: "Hive not found" });
+    if (!Array.isArray(images) || !images.length) {
+      return res.status(400).json({ message: "No image URLs provided" });
+    }
+
+    const hive = await Hive.findById(hiveId);
+
+    if (!hive) {
+      return res.status(404).json({ message: "Hive not found" });
+    }
+
+    const isOwner = hive.user.toString() === userId;
+
+    const isMember = hive.members.some(
+      m => m.email === userEmail && m.status === "accepted"
+    );
+
+    if (!isOwner && !isMember) {
+      return res.status(403).json({ message: "Not allowed to upload" });
+    }
 
     const imageObjects = images.map(url => ({
       url,
@@ -103,10 +121,13 @@ const saveHiveImageUrls = async (req, res) => {
     await hive.save();
 
     res.json({ success: true, images: hive.images });
+
   } catch (err) {
+    console.error("Save URLs error:", err);
     res.status(500).json({ message: err.message });
   }
 };
+
 const blurHiveImage = async (req, res) => {
   try {
     const userId = req.user.id;
