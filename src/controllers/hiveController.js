@@ -90,24 +90,49 @@ const saveHiveImageUrls = async (req, res) => {
     const hiveId = req.params.hiveId;
     const { images } = req.body;
 
-    if (!Array.isArray(images) || !images.length) {
-      return res.status(400).json({ message: "No image URLs provided" });
-    }
-
     const hive = await Hive.findOne({ _id: hiveId, user: userId });
-    if (!hive) {
-      return res.status(404).json({ message: "Hive not found" });
-    }
+    if (!hive) return res.status(404).json({ message: "Hive not found" });
 
-    hive.images.push(...images);
+    const imageObjects = images.map(url => ({
+      url,
+      blurred: false,
+    }));
+
+    hive.images.push(...imageObjects);
+
     await hive.save();
 
     res.json({ success: true, images: hive.images });
   } catch (err) {
-    console.error("Save URLs error:", err);
     res.status(500).json({ message: err.message });
   }
 };
+const blurHiveImage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { hiveId } = req.params;
+    const { index, blurred } = req.body;
+
+    const hive = await Hive.findOne({ _id: hiveId, user: userId });
+
+    if (!hive) {
+      return res.status(403).json({ message: "Only owner can blur images" });
+    }
+
+    if (!hive.images[index]) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    hive.images[index].blurred = blurred;
+
+    await hive.save();
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 
 
 // Keep other functions as they are...
@@ -503,4 +528,4 @@ const acceptHiveInviteByEmail = async (req, res) => {
 };
 
 
-module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMemberByEmail, acceptHiveInvite, acceptHiveInviteByEmail };
+module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMemberByEmail, acceptHiveInvite, acceptHiveInviteByEmail,blurHiveImage };

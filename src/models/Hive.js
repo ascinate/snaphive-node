@@ -6,7 +6,7 @@ const hiveSchema = new mongoose.Schema({
   hiveName: { type: String, required: true },
   description: { type: String },
   privacyMode: { type: String, enum: ["automatic", "approval"], default: "automatic" },
-    status: {
+  status: {
     type: String,
     enum: ["active", "hidden", "deleted"],
     default: "active",
@@ -17,7 +17,13 @@ const hiveSchema = new mongoose.Schema({
   endTime: { type: String },
   expiryDate: { type: Date },
   coverImage: { type: String, default: null },
-  images: { type: [String], default: [] },
+  images: [
+    {
+      url: { type: String, required: true },
+      blurred: { type: Boolean, default: false },
+    },
+  ],
+
   members: [
     {
       memberId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
