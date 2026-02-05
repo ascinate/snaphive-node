@@ -16,6 +16,8 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const adminHiveRoutes = require("./routes/adminHiveRoutes");
 const adminUserRoutes = require("./routes/adminUserRoutes");
 const adminStockRoutes =require("./routes/adminStockRoutes");
+const notificationRoutes =require("./routes/notificationRoutes");
+
 
 
 
@@ -105,6 +107,8 @@ app.get("/notifications", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/hives", hiveRoutes);
+app.use("/api/notifications", notificationRoutes);
+
 
 /* -------------------- 404 -------------------- */
 app.use((req, res) => {
