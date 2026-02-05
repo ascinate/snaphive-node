@@ -23,6 +23,9 @@ if (!admin.apps.length) {
   });
 }
 
-const bucket = admin.storage().bucket();
 
-module.exports = bucket;
+
+module.exports = {
+  admin,
+  bucket: admin.storage().bucket(),
+};

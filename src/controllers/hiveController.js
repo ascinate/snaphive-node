@@ -1,7 +1,11 @@
 const Hive = require("../models/Hive");
 const bucket = require("../config/firebase");
+const {sendPush} = require("../utils/sendPush");
+
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
+
+
 
 function formatTo12Hour(time) {
   if (!time) return null;
@@ -42,45 +46,45 @@ function formatTo12Hour(time) {
 }
 
 
-  const createHive = async (req, res) => {
-    try {
-      const userId = req.user.id;
-      const {
-        hiveName,
-        description,
-        privacyMode,
-        eventDate,
-        startTime,
-        endTime,
-        expiryDate,
-        coverImage,
-      } = req.body;
+const createHive = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const {
+      hiveName,
+      description,
+      privacyMode,
+      eventDate,
+      startTime,
+      endTime,
+      expiryDate,
+      coverImage,
+    } = req.body;
 
-      if (!hiveName) {
-        return res.status(400).json({ success: false, message: "Hive name is required" });
-      }
-
-      const hive = await Hive.create({
-        user: userId,
-        hiveName,
-        description,
-        privacyMode,
-        eventDate,
-        startTime,
-        endTime,
-        expiryDate,
-        coverImage,
-      });
-
-      res.status(201).json({
-        success: true,
-        message: "Hive created successfully",
-        data: hive,
-      });
-    } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
+    if (!hiveName) {
+      return res.status(400).json({ success: false, message: "Hive name is required" });
     }
-  };
+
+    const hive = await Hive.create({
+      user: userId,
+      hiveName,
+      description,
+      privacyMode,
+      eventDate,
+      startTime,
+      endTime,
+      expiryDate,
+      coverImage,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Hive created successfully",
+      data: hive,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
 
 
@@ -119,6 +123,49 @@ const saveHiveImageUrls = async (req, res) => {
     hive.images.push(...imageObjects);
 
     await hive.save();
+
+    // 2️⃣ PUSH NOTIFICATION 🔔
+
+    // CASE A: MEMBER uploads → notify OWNER
+    if (!isOwner) {
+      const owner = await User.findById(hive.user);
+
+      if (owner?.fcmToken) {
+        await sendPush(
+          owner.fcmToken,
+          "Photo uploaded 📸",
+          "A member added new photos to your hive",
+          {
+            hiveId: hive._id.toString(),
+            type: "PHOTO_UPLOADED",
+          }
+        );
+      }
+    }
+
+    // CASE B: OWNER uploads → notify MEMBERS
+    if (isOwner) {
+      const memberIds = hive.members
+        .filter(m => m.status === "accepted" && m.memberId)
+        .map(m => m.memberId);
+
+      const members = await User.find({
+        _id: { $in: memberIds },
+        fcmToken: { $ne: null },
+      });
+
+      for (const member of members) {
+        await sendPush(
+          member.fcmToken,
+          "New photo in hive 📸",
+          "The hive owner uploaded new photos",
+          {
+            hiveId: hive._id.toString(),
+            type: "PHOTO_UPLOADED",
+          }
+        );
+      }
+    }
 
     res.json({ success: true, images: hive.images });
 
@@ -549,4 +596,4 @@ const acceptHiveInviteByEmail = async (req, res) => {
 };
 
 
-module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMemberByEmail, acceptHiveInvite, acceptHiveInviteByEmail,blurHiveImage };
+module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMemberByEmail, acceptHiveInvite, acceptHiveInviteByEmail, blurHiveImage };
