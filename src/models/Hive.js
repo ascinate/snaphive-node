@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 
 const hiveSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  fcmToken: { type: String, default: null },
+ 
   hiveName: { type: String, required: true },
   description: { type: String },
   privacyMode: { type: String, enum: ["automatic", "approval"], default: "automatic" },
