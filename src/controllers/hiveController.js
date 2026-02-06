@@ -91,6 +91,9 @@ const createHive = async (req, res) => {
 const saveHiveImageUrls = async (req, res) => {
   try {
     const userId = req.user.id;
+    const uploader = await User.findById(userId).select("name");
+    const uploaderName = uploader?.name || "Someone";
+
     const userEmail = req.user.email;
     const hiveId = req.params.hiveId;
     const { images } = req.body;
@@ -123,7 +126,7 @@ const saveHiveImageUrls = async (req, res) => {
     hive.images.push(...imageObjects);
 
     await hive.save();
-    
+
     // CASE A: MEMBER uploads → notify OWNER
     if (!isOwner) {
       const owner = await User.findById(hive.user);
@@ -132,7 +135,7 @@ const saveHiveImageUrls = async (req, res) => {
         await sendPush(
           owner.fcmToken,
           `New photos in ${hive.hiveName} 📸`,
-          `${userEmail} added photos to ${hive.hiveName}`,
+          `${uploaderName} added photos to ${hive.hiveName}`,
           {
             hiveId: hive._id.toString(),
             hiveName: hive.hiveName,
