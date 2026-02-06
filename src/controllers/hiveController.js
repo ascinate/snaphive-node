@@ -1,6 +1,6 @@
 const Hive = require("../models/Hive");
 const bucket = require("../config/firebase");
-const {sendPush} = require("../utils/sendPush");
+const { sendPush } = require("../utils/sendPush");
 
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
@@ -123,9 +123,7 @@ const saveHiveImageUrls = async (req, res) => {
     hive.images.push(...imageObjects);
 
     await hive.save();
-
-    // 2️⃣ PUSH NOTIFICATION 🔔
-
+    
     // CASE A: MEMBER uploads → notify OWNER
     if (!isOwner) {
       const owner = await User.findById(hive.user);
@@ -133,13 +131,15 @@ const saveHiveImageUrls = async (req, res) => {
       if (owner?.fcmToken) {
         await sendPush(
           owner.fcmToken,
-          "Photo uploaded 📸",
-          "A member added new photos to your hive",
+          `New photos in ${hive.hiveName} 📸`,
+          `${userEmail} added photos to ${hive.hiveName}`,
           {
             hiveId: hive._id.toString(),
+            hiveName: hive.hiveName,
             type: "PHOTO_UPLOADED",
           }
         );
+
       }
     }
 
@@ -157,13 +157,15 @@ const saveHiveImageUrls = async (req, res) => {
       for (const member of members) {
         await sendPush(
           member.fcmToken,
-          "New photo in hive 📸",
-          "The hive owner uploaded new photos",
+          `New photos in ${hive.hiveName} 📸`,
+          `Owner uploaded new photos to ${hive.hiveName}`,
           {
             hiveId: hive._id.toString(),
+            hiveName: hive.hiveName,
             type: "PHOTO_UPLOADED",
           }
         );
+
       }
     }
 
