@@ -158,7 +158,7 @@ const login = async (req, res) => {
 
 const appleLogin = async (req, res) => {
   try {
-    const { identityToken, email, fullName } = req.body;
+    const { identityToken, email, fullName, fcmToken } = req.body;
 
     if (!identityToken) {
       return res.status(400).json({ message: "Missing Apple token" });
@@ -179,23 +179,25 @@ const appleLogin = async (req, res) => {
         provider: "apple",
         isVerified: true,
         isActive: true,
+        fcmToken: fcmToken || null,
       });
+    } else {
+      // 🔥 update FCM token if changed
+      if (fcmToken && user.fcmToken !== fcmToken) {
+        user.fcmToken = fcmToken;
+      }
+
+      user.lastLogin = new Date();
+      await user.save();
     }
 
     if (user.isDeleted) {
-      return res.status(403).json({
-        message: "Account deactivated. Please contact support.",
-      });
+      return res.status(403).json({ message: "Account deactivated" });
     }
 
     if (!user.isActive) {
-      return res.status(403).json({
-        message: "Account blocked by admin.",
-      });
+      return res.status(403).json({ message: "Account blocked" });
     }
-
-    user.lastLogin = new Date();
-    await user.save();
 
     const token = jwt.sign(
       { id: user._id },
@@ -204,7 +206,7 @@ const appleLogin = async (req, res) => {
     );
 
     res.json({
-      message: "Apple login successfull",
+      message: "Apple login successful",
       token,
       user: {
         id: user._id,
@@ -218,6 +220,7 @@ const appleLogin = async (req, res) => {
     res.status(401).json({ message: "Apple authentication failed" });
   }
 };
+
 
 
 
