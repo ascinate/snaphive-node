@@ -204,7 +204,7 @@ const appleLogin = async (req, res) => {
     );
 
     res.json({
-      message: "Apple login success",
+      message: "Apple login successfull",
       token,
       user: {
         id: user._id,
