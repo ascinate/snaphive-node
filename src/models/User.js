@@ -3,10 +3,27 @@ const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String },
-    email: { type: String, required: true, unique: true },
+    email: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    password: {
+      type: String,
+    },
+    appleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    provider: {
+      type: String,
+      enum: ["email", "apple"],
+      default: "email",
+    },
+
     password: { type: String, required: true },
-     fcmToken: { type: String, default: null },
+    fcmToken: { type: String, default: null },
     otp: { type: String },
     otpExpires: { type: Date },
     isVerified: { type: Boolean, default: false },

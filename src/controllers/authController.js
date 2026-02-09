@@ -3,7 +3,9 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const bucket = require("../config/firebase");
 const fs = require("fs");
+const appleSigninAuth = require("apple-signin-auth");
 const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
+
 
 
 const sendEmail = async (to, subject, html) => {
@@ -151,6 +153,72 @@ const login = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+
+const appleLogin = async (req, res) => {
+  try {
+    const { identityToken, email, fullName } = req.body;
+
+    if (!identityToken) {
+      return res.status(400).json({ message: "Missing Apple token" });
+    }
+
+    const appleData = await appleSigninAuth.verifyIdToken(identityToken, {
+      audience: process.env.APPLE_CLIENT_ID,
+      ignoreExpiration: true,
+    });
+
+    let user = await User.findOne({ appleId: appleData.sub });
+
+    if (!user) {
+      user = await User.create({
+        appleId: appleData.sub,
+        email: email || appleData.email || null,
+        name: fullName?.givenName || "Apple User",
+        provider: "apple",
+        isVerified: true,
+        isActive: true,
+      });
+    }
+
+    if (user.isDeleted) {
+      return res.status(403).json({
+        message: "Account deactivated. Please contact support.",
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        message: "Account blocked by admin.",
+      });
+    }
+
+    user.lastLogin = new Date();
+    await user.save();
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      message: "Apple login success",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        provider: user.provider,
+      },
+    });
+  } catch (err) {
+    console.error("Apple login error:", err);
+    res.status(401).json({ message: "Apple authentication failed" });
+  }
+};
+
 
 
 
@@ -303,5 +371,5 @@ const updateProfile = async (req, res) => {
 };
 
 
-module.exports = { register, login, verifyOTP, forgotPassword, resetPassword, resendOTP, updateProfile };
+module.exports = { register, login, verifyOTP, forgotPassword, resetPassword, resendOTP, updateProfile, appleLogin };
 
