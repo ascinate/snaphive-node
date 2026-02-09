@@ -8,9 +8,6 @@ const userSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
-    password: {
-      type: String,
-    },
     appleId: {
       type: String,
       unique: true,
@@ -22,7 +19,7 @@ const userSchema = new mongoose.Schema(
       default: "email",
     },
 
-    password: { type: String, required: true },
+    password: { type: String },
     fcmToken: { type: String, default: null },
     otp: { type: String },
     otpExpires: { type: Date },
