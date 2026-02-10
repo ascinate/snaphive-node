@@ -206,6 +206,59 @@ const blurHiveImage = async (req, res) => {
   }
 };
 
+const deleteHive = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { hiveId } = req.params;
+
+    const hive = await Hive.findById(hiveId);
+
+    if (!hive) {
+      return res.status(404).json({
+        success: false,
+        message: "Hive not found",
+      });
+    }
+
+    // 🔒 Only owner can delete
+    if (hive.user.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to delete this hive",
+      });
+    }
+
+    // 🧹 OPTIONAL: delete images from Firebase storage
+    if (hive.images && hive.images.length > 0) {
+      for (const img of hive.images) {
+        try {
+          const filePath = decodeURIComponent(
+            img.url.split("/o/")[1].split("?")[0]
+          );
+          await bucket.file(filePath).delete();
+        } catch (err) {
+          console.warn("Failed to delete image:", err.message);
+        }
+      }
+    }
+
+    await hive.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: "Hive deleted successfully",
+    });
+
+  } catch (err) {
+    console.error("Delete hive error:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+
 
 
 // Keep other functions as they are...
@@ -601,4 +654,4 @@ const acceptHiveInviteByEmail = async (req, res) => {
 };
 
 
-module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMemberByEmail, acceptHiveInvite, acceptHiveInviteByEmail, blurHiveImage };
+module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMemberByEmail, acceptHiveInvite, acceptHiveInviteByEmail, blurHiveImage,deleteHive };
