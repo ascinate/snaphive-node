@@ -327,7 +327,7 @@ const getUserHives = async (req, res) => {
 
 const getHiveById = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { hiveId } = req.params;
 
     const hive = await Hive.findOne({
@@ -356,9 +356,8 @@ const getHiveById = async (req, res) => {
       });
     }
 
-    // 🔹 DETERMINE USER ROLE
     const userRole =
-      hive.user.toString() === userId ? "owner" : "member";
+      hive.user._id.toString() === userId.toString() ? "owner" : "member";
 
     // 🔹 EXPIRY LOGIC (unchanged)
     if (hive.isTemporary && hive.expiryDate) {
@@ -654,4 +653,4 @@ const acceptHiveInviteByEmail = async (req, res) => {
 };
 
 
-module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMemberByEmail, acceptHiveInvite, acceptHiveInviteByEmail, blurHiveImage,deleteHive };
+module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMemberByEmail, acceptHiveInvite, acceptHiveInviteByEmail, blurHiveImage, deleteHive };
