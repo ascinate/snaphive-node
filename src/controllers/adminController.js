@@ -210,13 +210,21 @@ const getHiveDetails = async (req, res) => {
 
   res.json({ success: true, hive });
 };
- const getHiveImages = async (req, res) => {
+const getHiveImages = async (req, res) => {
   const hive = await Hive.findById(req.params.id);
 
-  if (!hive) return res.status(404).json({ success: false });
+  if (!hive) {
+    return res.status(404).json({ success: false });
+  }
 
-  res.json({ success: true, images: hive.images });
+  // Convert objects to plain URLs
+  const images = hive.images.map(img =>
+    typeof img === "string" ? img : img.url
+  );
+
+  res.json({ success: true, images });
 };
+
 
 const removeHiveImage = async (req, res) => {
   try {
@@ -253,12 +261,13 @@ const updateHiveStatus = async (req, res) => {
 
 
  const flagHive = async (req, res) => {
+  const {  page } = req.body;
   await Hive.findByIdAndUpdate(req.params.id, {
     isFlagged: true,
     flagReason: req.body.reason
   });
 
-  res.redirect("/admin/hive");
+  res.redirect(`/hive?page=${page}`);
 };
 
 

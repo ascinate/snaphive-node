@@ -35,6 +35,7 @@
             <th>Privacy</th>
             <th>Images</th>
             <th>Status</th>
+            <th>Flag</th>
             <th>Created</th>
             <th>Actions</th>
           </tr>
@@ -76,6 +77,14 @@
                           <span class="status">—</span>
                           <% } %>
                 </td>
+                <td>
+                  <% if (hive.isFlagged) { %>
+                    <span style="color:red; font-weight:bold;">🚩 Flagged</span>
+                    <% } else { %>
+                      —
+                      <% } %>
+                </td>
+
 
                 <td>
                   <%= hive.createdAt.toDateString() %>
@@ -93,7 +102,7 @@
                     Status
                   </button>
 
-                  <button class="btn btn-flag" onclick="openFlag('<%= hive._id %>')">
+                  <button class="btn btn-flag" onclick="openFlag('<%= hive._id %>',<%= pagination.currentPage %>)">
                     Flag
                   </button>
                 </td>
@@ -340,12 +349,42 @@
 
 
         // 4️⃣ Flag Hive
-        function openFlag(hiveId) {
+        function openFlag(hiveId, currentPage) {
           openModal("Flag Hive", `
-      <form method="POST" action="/hive/${hiveId}/flag">
-        <textarea name="reason" placeholder="Reason" required></textarea>
-        <button type="submit">Flag</button>
+    <div class="flag-modal">
+      
+      <div class="flag-header">
+        <div class="flag-icon">🚩</div>
+        <div>
+          <h4>Flag This Hive</h4>
+          <p>Please provide a reason for flagging.</p>
+        </div>
+      </div>
+
+      <form method="POST" action="/hive/${hiveId}/flag" class="flag-form">
+        <input type="hidden" name="page" value="${currentPage}" />
+
+        <label class="flag-label">Reason</label>
+        <textarea 
+          name="reason" 
+          placeholder="Enter reason for flagging this hive..."
+          required
+          class="flag-textarea"
+        ></textarea>
+
+        <div class="flag-actions">
+          <button type="button" class="btn-cancel" onclick="closeModal()">
+            Cancel
+          </button>
+
+          <button type="submit" class="btn-flag">
+            🚩 Flag Hive
+          </button>
+        </div>
       </form>
-    `);
+
+    </div>
+  `);
         }
+
       </script>
