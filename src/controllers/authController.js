@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const { bucket } = require("../config/firebase");
+
 const fs = require("fs");
 const appleSigninAuth = require("apple-signin-auth");
 const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
@@ -311,62 +311,23 @@ const resendOTP = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const file = req.file;
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
-
-    let imageUrl = user.profileImage;
-
-    if (file) {
-      const localPath = file.path;
-      const destination = `profile_images/${userId}_${Date.now()}_${file.originalname}`;
-
-      await bucket.upload(localPath, {
-        destination,
-        metadata: { contentType: file.mimetype },
-      });
-
-      fs.unlinkSync(localPath);
-
-      const [url] = await bucket.file(destination).getSignedUrl({
-        action: "read",
-        expires: "03-09-2491",
-      });
-
-      if (user.profileImage) {
-        try {
-          let oldFilePath = null;
-          const imageUrl = user.profileImage;
-
-          if (imageUrl.includes("/o/")) {
-            const parts = imageUrl.split("/o/");
-            oldFilePath = decodeURIComponent(parts[1].split("?")[0]);
-          }
-
-          else if (imageUrl.includes("/profile_images/")) {
-            const parts = imageUrl.split("/profile_images/");
-            oldFilePath = `profile_images/${parts[1].split("?")[0]}`;
-          }
-
-          if (oldFilePath) {
-            await bucket.file(oldFilePath).delete({ ignoreNotFound: true });
-            console.log("✅ Old image deleted:", oldFilePath);
-          }
-        } catch (err) {
-          console.log("⚠️ Old image delete failed:", err.message);
-        }
-      }
-
-
-      imageUrl = url;
-    }
-
+ 
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
-    if (imageUrl) user.profileImage = imageUrl;
-
+ 
+    if (req.body.profileImage) {
+      user.profileImage = req.body.profileImage;
+    }
+ 
     await user.save();
-    res.json({ success: true, message: "Profile updated successfully", user });
+ 
+    res.json({
+      success: true,
+      message: "Profile updated successfully",
+      user,
+    });
   } catch (err) {
     console.error("Update profile error:", err);
     res.status(500).json({ message: err.message });
