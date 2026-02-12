@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-const bucket = require("../config/firebase");
+const { bucket } = require("../config/firebase");
 const fs = require("fs");
 const appleSigninAuth = require("apple-signin-auth");
 const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();

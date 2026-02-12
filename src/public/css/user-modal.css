@@ -799,4 +799,97 @@ tbody tr td[colspan] {
 }
 
 
+/* flag */
+.flag-modal {
+  padding: 10px 5px;
+}
+
+.flag-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.flag-icon {
+  font-size: 28px;
+  background: #ffe5e5;
+  color: #d93025;
+  padding: 12px;
+  border-radius: 50%;
+}
+
+.flag-header h4 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.flag-header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.flag-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.flag-label {
+  font-size: 14px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.flag-textarea {
+  resize: none;
+  min-height: 100px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  margin-bottom: 20px;
+  transition: border 0.2s ease;
+}
+
+.flag-textarea:focus {
+  border-color: #d93025;
+  outline: none;
+}
+
+.flag-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-cancel {
+  background: #f1f1f1;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-cancel:hover {
+  background: #e2e2e2;
+}
+
+.btn-flag {
+  background: #d93025;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s ease;
+}
+
+.btn-flag:hover {
+  background: #b71c1c;
+}
+
+
 

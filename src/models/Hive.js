@@ -12,6 +12,15 @@ const hiveSchema = new mongoose.Schema({
     enum: ["active", "hidden", "deleted"],
     default: "active",
   },
+  isFlagged: {
+  type: Boolean,
+  default: false,
+},
+
+flagReason: {
+  type: String,
+  default: null,
+},
   isTemporary: { type: Boolean, default: false },
   eventDate: { type: Date },
   startTime: { type: String },
