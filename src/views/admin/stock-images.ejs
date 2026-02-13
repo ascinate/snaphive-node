@@ -69,12 +69,34 @@
                   Cover: <%= img.usage.coverAllowed ? "Yes" : "No" %><br>
                     Gallery: <%= img.usage.galleryAllowed ? "Yes" : "No" %>
                 </td>
-                <td>
+                <td class="action-cell">
+
+                  <!-- Update Image -->
+                  <form method="POST" action="/static-stock/update-image/<%= img._id %>" enctype="multipart/form-data"
+                    class="update-form">
+
+                    <label class="custom-file-upload">
+                      <input type="file" name="imageFile" accept="image/*" required
+                        onchange="this.nextElementSibling.innerText = this.files[0]?.name || 'Select Image';">
+                      <span>Select Image</span>
+                    </label>
+
+                    <button type="submit" class="btn btn-update">
+                      Update
+                    </button>
+                  </form>
+
+                  <!-- Delete -->
                   <form method="POST" action="/static-stock/delete/<%= img._id %>"
                     onsubmit="return confirm('Are you sure?');">
-                    <button type="submit" class="btn btn-flag">Delete</button>
+
+                    <button type="submit" class="btn btn-delete">
+                      Delete
+                    </button>
                   </form>
+
                 </td>
+
               </tr>
               <% }) %>
                 <% } else { %>

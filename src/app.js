@@ -17,10 +17,7 @@ const adminHiveRoutes = require("./routes/adminHiveRoutes");
 const adminUserRoutes = require("./routes/adminUserRoutes");
 const adminStockRoutes =require("./routes/adminStockRoutes");
 const notificationRoutes =require("./routes/notificationRoutes");
-
-
-
-
+const publicStockRoutes =require("./routes/publicStockRoutes");
 
 
 const app = express();
@@ -108,6 +105,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/hives", hiveRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/stock-images", publicStockRoutes);
+
 
 
 /* -------------------- 404 -------------------- */
