@@ -231,19 +231,36 @@ const removeHiveImage = async (req, res) => {
     const { image } = req.body;
 
     if (!image) {
-      return res.status(400).json({ success: false, message: "Image is required" });
+      return res.status(400).json({
+        success: false,
+        message: "Image is required"
+      });
     }
 
-    await Hive.findByIdAndUpdate(req.params.id, {
-      $pull: { images: image }
+    const hive = await Hive.findById(req.params.id);
+
+    if (!hive) {
+      return res.status(404).json({ success: false });
+    }
+
+    // Remove both string and object type
+    hive.images = hive.images.filter(img => {
+      if (typeof img === "string") {
+        return img !== image;
+      }
+      return img.url !== image;
     });
 
+    await hive.save();
+
     res.json({ success: true });
+
   } catch (error) {
     console.error("🔥 REMOVE HIVE IMAGE ERROR 🔥", error);
     res.status(500).json({ success: false });
   }
 };
+
 
 const updateHiveStatus = async (req, res) => {
   const { status, page } = req.body;

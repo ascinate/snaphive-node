@@ -891,5 +891,71 @@ tbody tr td[colspan] {
   background: #b71c1c;
 }
 
+/* stock image btn */
+.action-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.update-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Hide default input */
+.custom-file-upload input[type="file"] {
+  display: none;
+}
+
+/* Custom file button */
+.custom-file-upload span {
+  display: inline-block;
+  padding: 8px 12px;
+  background: #f3f4f6;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.3s ease;
+}
+
+.custom-file-upload span:hover {
+  background: #e5e7eb;
+}
+
+/* Update Button */
+.btn-update {
+  padding: 8px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-update:hover {
+  background: #1e40af;
+}
+
+/* Delete Button */
+.btn-delete {
+  padding: 8px;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-delete:hover {
+  background: #991b1b;
+}
+
 
 

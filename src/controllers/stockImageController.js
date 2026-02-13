@@ -1,7 +1,7 @@
 const StockImage = require("../models/StockImage");
 const path = require("path");
 const fs = require("fs");
-const bucket = require("../config/firebase");
+const {bucket} = require("../config/firebase");
 
 
 const { v4: uuidv4 } = require("uuid");
@@ -60,8 +60,6 @@ const addStockImage = async (req, res) => {
   }
 };
 
-module.exports = { addStockImage };
-
 
 const deleteStockImage = async (req, res) => {
   try {
@@ -80,12 +78,89 @@ const deleteStockImage = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
+const getStockImagesAPI = async (req, res) => {
+  try {
+    const { category,coverAllowed  } = req.query;
+
+    let filter = {};
+    if (category) {
+      filter.category = category;
+    }
+     if (coverAllowed === "true") {
+      filter["usage.coverAllowed"] = true;
+    }
+
+    const images = await StockImage.find(filter)
+      .select("title file category tags usage createdAt")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      images
+    });
+
+  } catch (err) {
+    console.error("🔥 Stock API error:", err);
+    res.status(500).json({ success: false });
+  }
+};
+
+const updateStockImage = async (req, res) => {
+  try {
+    const stock = await StockImage.findById(req.params.id);
+
+    if (!stock) {
+      return res.redirect("/static-stock");
+    }
+
+    if (!req.file) {
+      return res.status(400).send("No file uploaded");
+    }
+
+    // 🔥 1. Delete old image from Firebase
+    if (stock.file) {
+      const oldFilePath = stock.file.split(`${bucket.name}/`)[1];
+      if (oldFilePath) {
+        await bucket.file(oldFilePath).delete().catch(() => {});
+      }
+    }
+
+    // 🔥 2. Upload new image
+    const fileName = `stock/${uuidv4()}-${req.file.originalname}`;
+    const file = bucket.file(fileName);
+
+    await file.save(req.file.buffer, {
+      metadata: {
+        contentType: req.file.mimetype,
+      },
+      public: true,
+    });
+
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+    // 🔥 3. Update only image field
+    stock.file = publicUrl;
+
+    await stock.save();
+
+    res.redirect("/static-stock");
+
+  } catch (err) {
+    console.error("🔥 Update image error:", err);
+    res.redirect("/static-stock");
+  }
+};
+
+
 
 
 
 
 module.exports = {
+  addStockImage,
   getAllImages,
   addStockImage,
-  deleteStockImage
+  deleteStockImage,
+  getStockImagesAPI,
+  updateStockImage
 };
