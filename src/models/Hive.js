@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 
 const hiveSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
- 
+
   hiveName: { type: String, required: true },
   description: { type: String },
   privacyMode: { type: String, enum: ["automatic", "approval"], default: "automatic" },
@@ -13,14 +13,14 @@ const hiveSchema = new mongoose.Schema({
     default: "active",
   },
   isFlagged: {
-  type: Boolean,
-  default: false,
-},
+    type: Boolean,
+    default: false,
+  },
 
-flagReason: {
-  type: String,
-  default: null,
-},
+  flagReason: {
+    type: String,
+    default: null,
+  },
   isTemporary: { type: Boolean, default: false },
   eventDate: { type: Date },
   startTime: { type: String },
@@ -33,6 +33,15 @@ flagReason: {
       blurred: { type: Boolean, default: false },
     },
   ],
+  videos: [
+    {
+      url: { type: String, required: true },
+      thumbnail: { type: String, default: null },
+      duration: { type: Number }, 
+      size: { type: Number }, 
+    },
+  ],
+
 
   members: [
     {

@@ -93,89 +93,115 @@ const saveHiveImageUrls = async (req, res) => {
     const userId = req.user.id;
     const uploader = await User.findById(userId).select("name");
     const uploaderName = uploader?.name || "Someone";
-
+ 
     const userEmail = req.user.email;
     const hiveId = req.params.hiveId;
-    const { images } = req.body;
-
-    if (!Array.isArray(images) || !images.length) {
-      return res.status(400).json({ message: "No image URLs provided" });
+    const { images = [], videos = [] } = req.body;
+ 
+    if (!images.length && !videos.length) {
+      return res.status(400).json({ message: "No media URLs provided" });
     }
-
+ 
     const hive = await Hive.findById(hiveId);
-
     if (!hive) {
       return res.status(404).json({ message: "Hive not found" });
     }
-
+ 
     const isOwner = hive.user.toString() === userId;
-
     const isMember = hive.members.some(
       m => m.email === userEmail && m.status === "accepted"
     );
-
+ 
     if (!isOwner && !isMember) {
       return res.status(403).json({ message: "Not allowed to upload" });
     }
-
-    const imageObjects = images.map(url => ({
-      url,
-      blurred: false,
-    }));
-
-    hive.images.push(...imageObjects);
-
+ 
+    // IMAGES
+    if (images.length) {
+      const imageObjects = images.map(url => ({
+        url,
+        blurred: false,
+      }));
+      hive.images.push(...imageObjects);
+    }
+ 
+    // VIDEOS
+    if (videos.length) {
+      const videoObjects = videos.map(video => ({
+        url: video.url,
+        thumbnail: video.thumbnail || null,
+        duration: video.duration,
+        size: video.size,
+      }));
+      hive.videos.push(...videoObjects);
+    }
+ 
     await hive.save();
-
-    // CASE A: MEMBER uploads → notify OWNER
+ 
+    const mediaLabel =
+      images.length && videos.length
+        ? "media"
+        : images.length
+        ? "photos"
+        : "videos";
+ 
+    const notificationType =
+      images.length && videos.length
+        ? "MEDIA_UPLOADED"
+        : images.length
+        ? "PHOTO_UPLOADED"
+        : "VIDEO_UPLOADED";
+ 
+    // MEMBER → OWNER
     if (!isOwner) {
       const owner = await User.findById(hive.user);
-
       if (owner?.fcmToken) {
         await sendPush(
           owner.fcmToken,
-          `New photos in ${hive.hiveName} 📸`,
-          `${uploaderName} added photos to ${hive.hiveName}`,
+          `New ${mediaLabel} in ${hive.hiveName}`,
+          `${uploaderName} added ${mediaLabel} to ${hive.hiveName}`,
           {
             hiveId: hive._id.toString(),
             hiveName: hive.hiveName,
-            type: "PHOTO_UPLOADED",
+            type: notificationType,
           }
         );
-
       }
     }
-
-    // CASE B: OWNER uploads → notify MEMBERS
+ 
+    // OWNER → MEMBERS
     if (isOwner) {
       const memberIds = hive.members
         .filter(m => m.status === "accepted" && m.memberId)
         .map(m => m.memberId);
-
+ 
       const members = await User.find({
         _id: { $in: memberIds },
         fcmToken: { $ne: null },
       });
-
+ 
       for (const member of members) {
         await sendPush(
           member.fcmToken,
-          `New photos in ${hive.hiveName} 📸`,
-          `Owner uploaded new photos to ${hive.hiveName}`,
+          `New ${mediaLabel} in ${hive.hiveName}`,
+          `Owner uploaded new ${mediaLabel} to ${hive.hiveName}`,
           {
             hiveId: hive._id.toString(),
             hiveName: hive.hiveName,
-            type: "PHOTO_UPLOADED",
+            type: notificationType,
           }
         );
-
       }
     }
-
-    res.json({ success: true, images: hive.images });
-
+ 
+    res.json({
+      success: true,
+      images: hive.images,
+      videos: hive.videos,
+    });
+ 
   } catch (err) {
-    console.error("Save URLs error:", err);
+    console.error("Save media URLs error:", err);
     res.status(500).json({ message: err.message });
   }
 };
