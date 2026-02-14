@@ -37,8 +37,6 @@ const hiveSchema = new mongoose.Schema({
     {
       url: { type: String, required: true },
       thumbnail: { type: String, default: null },
-      duration: { type: Number }, 
-      size: { type: Number }, 
     },
   ],
 
