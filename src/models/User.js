@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema(
 
     provider: {
       type: String,
-      enum: ["email", "apple"],
+      enum: ["email", "phone", "apple"],
       default: "email",
     },
 
