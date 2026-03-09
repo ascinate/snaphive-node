@@ -1,10 +1,17 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-
+const twilio = require("twilio");
 const fs = require("fs");
 const appleSigninAuth = require("apple-signin-auth");
 const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
+
+
+
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
 
 
 
@@ -90,8 +97,12 @@ const register = async (req, res) => {
     }
 
     if (phone) {
-      console.log(`Send OTP to phone ${phone}: ${otp}`);
-      // here your Firebase SMS
+      await twilioClient.verify.v2
+        .services(process.env.TWILIO_VERIFY_SERVICE_SID)
+        .verifications.create({
+          to: phone,
+          channel: "sms",
+        });
     }
 
     res.status(201).json({
@@ -106,23 +117,35 @@ const register = async (req, res) => {
 
 const verifyOTP = async (req, res) => {
   try {
-
     const { email, phone, otp } = req.body;
 
     const user = await User.findOne({
-      $or: [{ email }, { phone }]
+      $or: [{ email }, { phone }],
     });
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
 
-    if (user.otp !== otp) {
-      return res.status(400).json({ message: "Invalid OTP" });
-    }
+    if (phone) {
+      const verification = await twilioClient.verify.v2
+        .services(process.env.TWILIO_VERIFY_SERVICE_SID)
+        .verificationChecks.create({
+          to: phone,
+          code: otp,
+        });
 
-    if (user.otpExpires < Date.now()) {
-      return res.status(400).json({ message: "OTP expired" });
+      if (verification.status !== "approved") {
+        return res.status(400).json({ message: "Invalid OTP" });
+      }
+    } else {
+      if (user.otp !== otp) {
+        return res.status(400).json({ message: "Invalid OTP" });
+      }
+
+      if (user.otpExpires < Date.now()) {
+        return res.status(400).json({ message: "OTP expired" });
+      }
     }
 
     user.isVerified = true;
@@ -140,14 +163,13 @@ const verifyOTP = async (req, res) => {
     res.json({
       message: "Verification successful",
       token,
-      user
+      user,
     });
 
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 const login = async (req, res) => {
   try {
@@ -351,16 +373,16 @@ const updateProfile = async (req, res) => {
     const userId = req.user.id;
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
- 
+
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
- 
+
     if (req.body.profileImage) {
       user.profileImage = req.body.profileImage;
     }
- 
+
     await user.save();
- 
+
     res.json({
       success: true,
       message: "Profile updated successfully",
