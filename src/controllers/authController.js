@@ -53,18 +53,52 @@ const sendOTPEmail = async (email, otp) => {
 
 const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ message: "Email already exists" });
+
+    const { name, email, phone, password } = req.body;
+
+    if (!email && !phone) {
+      return res.status(400).json({
+        message: "Email or phone is required",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      $or: [{ email }, { phone }]
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User already exists",
+      });
+    }
+
     const otp = generateOTP();
     const otpExpires = Date.now() + 5 * 60 * 1000;
 
-    const user = await User.create({ name, email, password, otp, otpExpires });
-    await sendOTPEmail(email, otp);
-    res.status(201).json({
-      message: "OTP sent to your email. Please verify to complete registration.",
-      user: { id: user._id, email },
+    const user = await User.create({
+      name,
+      email: email || null,
+      phone: phone || null,
+      password,
+      provider: phone ? "phone" : "email",
+      otp,
+      otpExpires
     });
+
+    if (email) {
+      await sendOTPEmail(email, otp);
+    }
+
+    if (phone) {
+      console.log(`Send OTP to phone ${phone}: ${otp}`);
+      // here your Firebase SMS
+    }
+
+    res.status(201).json({
+      message: "OTP sent successfully",
+      user: { id: user._id, email, phone },
+    });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -72,65 +106,29 @@ const register = async (req, res) => {
 
 const verifyOTP = async (req, res) => {
   try {
-    const { email, otp } = req.body;
-    const user = await User.findOne({ email });
 
-    if (!user) return res.status(400).json({ message: "User not found" });
-    if (user.isVerified) return res.status(400).json({ message: "Already verified" });
-    if (user.otp !== otp) return res.status(400).json({ message: "Invalid OTP" });
-    if (user.otpExpires < Date.now()) return res.status(400).json({ message: "OTP expired" });
+    const { email, phone, otp } = req.body;
+
+    const user = await User.findOne({
+      $or: [{ email }, { phone }]
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    if (user.otpExpires < Date.now()) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
 
     user.isVerified = true;
     user.otp = undefined;
     user.otpExpires = undefined;
-    await user.save();
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
 
-    res.json({
-      message: "Email verified successfully",
-      token,
-      user: { id: user._id, name: user.name, email: user.email },
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-
-const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
-    if (user.isDeleted) {
-      return res.status(403).json({
-        message: "Account deactivated. Please contact support.",
-      });
-    }
-
-    if (!user.isActive) {
-      return res.status(403).json({
-        message: "Account blocked by admin.",
-      });
-    }
-
-    if (!user.isVerified) {
-      return res.status(403).json({
-        message: "Please verify your email before logging in.",
-      });
-    }
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
-
-    user.lastLogin = new Date();
     await user.save();
 
     const token = jwt.sign(
@@ -140,13 +138,9 @@ const login = async (req, res) => {
     );
 
     res.json({
-      message: "Login success",
+      message: "Verification successful",
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      user
     });
 
   } catch (err) {
@@ -154,6 +148,50 @@ const login = async (req, res) => {
   }
 };
 
+
+const login = async (req, res) => {
+  try {
+
+    const { email, phone, password } = req.body;
+
+    const user = await User.findOne({
+      $or: [{ email }, { phone }]
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid credentials",
+      });
+    }
+
+    if (user.provider === "email") {
+
+      const isMatch = await user.comparePassword(password);
+
+      if (!isMatch) {
+        return res.status(400).json({
+          message: "Invalid credentials",
+        });
+      }
+
+    }
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+      user
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
 
 const appleLogin = async (req, res) => {
