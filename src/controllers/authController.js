@@ -124,7 +124,7 @@ const verifyOTP = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: "User not founded" });
+      return res.status(400).json({ message: "User not found" });
     }
 
     if (phone) {
