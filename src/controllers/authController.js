@@ -1,37 +1,15 @@
+
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const twilio = require("twilio");
-const fs = require("fs");
 const appleSigninAuth = require("apple-signin-auth");
 const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
-
-
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
-
-
-
-const sendEmail = async (to, subject, html) => {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-
-  await transporter.sendMail({
-    from: `"SnapHive" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    html,
-  });
-};
-
 
 const sendOTPEmail = async (email, otp) => {
   const transporter = nodemailer.createTransport({
@@ -58,9 +36,15 @@ const sendOTPEmail = async (email, otp) => {
 };
 
 
+
+
+
+/* ===========================
+   REGISTER
+=========================== */
+
 const register = async (req, res) => {
   try {
-
     const { name, email, phone, password } = req.body;
 
     if (!email && !phone) {
@@ -69,9 +53,12 @@ const register = async (req, res) => {
       });
     }
 
-    const existingUser = await User.findOne({
-      $or: [{ email }, { phone }]
-    });
+    /* FIXED QUERY */
+    const query = [];
+    if (email) query.push({ email });
+    if (phone) query.push({ phone });
+
+    const existingUser = await User.findOne({ $or: query });
 
     if (existingUser) {
       return res.status(400).json({
@@ -79,8 +66,14 @@ const register = async (req, res) => {
       });
     }
 
-    const otp = generateOTP();
-    const otpExpires = Date.now() + 5 * 60 * 1000;
+    let otp = null;
+    let otpExpires = null;
+
+    /* EMAIL OTP */
+    if (email) {
+      otp = generateOTP();
+      otpExpires = Date.now() + 5 * 60 * 1000;
+    }
 
     const user = await User.create({
       name,
@@ -89,13 +82,15 @@ const register = async (req, res) => {
       password,
       provider: phone ? "phone" : "email",
       otp,
-      otpExpires
+      otpExpires,
     });
 
+    /* SEND EMAIL OTP */
     if (email) {
       await sendOTPEmail(email, otp);
     }
 
+    /* SEND TWILIO OTP */
     if (phone) {
       await twilioClient.verify.v2
         .services(process.env.TWILIO_VERIFY_SERVICE_SID)
@@ -107,7 +102,11 @@ const register = async (req, res) => {
 
     res.status(201).json({
       message: "OTP sent successfully",
-      user: { id: user._id, email, phone },
+      user: {
+        id: user._id,
+        email,
+        phone,
+      },
     });
 
   } catch (err) {
@@ -115,18 +114,30 @@ const register = async (req, res) => {
   }
 };
 
+
+
+
+
+
+/* ===========================
+   VERIFY OTP
+=========================== */
+
 const verifyOTP = async (req, res) => {
   try {
     const { email, phone, otp } = req.body;
 
-    const user = await User.findOne({
-      $or: [{ email }, { phone }],
-    });
+    const query = [];
+    if (email) query.push({ email });
+    if (phone) query.push({ phone });
+
+    const user = await User.findOne({ $or: query });
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
 
+    /* PHONE OTP (Twilio Verify) */
     if (phone) {
       const verification = await twilioClient.verify.v2
         .services(process.env.TWILIO_VERIFY_SERVICE_SID)
@@ -138,7 +149,10 @@ const verifyOTP = async (req, res) => {
       if (verification.status !== "approved") {
         return res.status(400).json({ message: "Invalid OTP" });
       }
-    } else {
+    }
+
+    /* EMAIL OTP */
+    if (email) {
       if (user.otp !== otp) {
         return res.status(400).json({ message: "Invalid OTP" });
       }
@@ -171,14 +185,24 @@ const verifyOTP = async (req, res) => {
   }
 };
 
+
+
+
+
+
+/* ===========================
+   LOGIN
+=========================== */
+
 const login = async (req, res) => {
   try {
-
     const { email, phone, password } = req.body;
 
-    const user = await User.findOne({
-      $or: [{ email }, { phone }]
-    });
+    const query = [];
+    if (email) query.push({ email });
+    if (phone) query.push({ phone });
+
+    const user = await User.findOne({ $or: query });
 
     if (!user) {
       return res.status(400).json({
@@ -187,7 +211,6 @@ const login = async (req, res) => {
     }
 
     if (user.provider === "email") {
-
       const isMatch = await user.comparePassword(password);
 
       if (!isMatch) {
@@ -195,7 +218,6 @@ const login = async (req, res) => {
           message: "Invalid credentials",
         });
       }
-
     }
 
     const token = jwt.sign(
@@ -207,7 +229,7 @@ const login = async (req, res) => {
     res.json({
       message: "Login successful",
       token,
-      user
+      user,
     });
 
   } catch (err) {
