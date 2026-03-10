@@ -419,12 +419,11 @@ const getHiveById = async (req, res) => {
   }
 };
 
-
 const inviteMember = async (req, res) => {
   try {
     const inviterId = req.user.id;
     const { hiveId } = req.params;
-    let { email, phone } = req.body;
+    const { email, phone } = req.body;
 
     if (!email && !phone) {
       return res.status(400).json({
@@ -433,12 +432,8 @@ const inviteMember = async (req, res) => {
       });
     }
 
-    // normalize phone
-    if (phone && !phone.startsWith("+")) {
-      phone = `+91${phone}`;
-    }
-
     const hive = await Hive.findOne({ _id: hiveId, user: inviterId });
+
     if (!hive) {
       return res.status(404).json({
         success: false,
@@ -453,7 +448,6 @@ const inviteMember = async (req, res) => {
 
     const memberId = invitedUser ? invitedUser._id : null;
 
-    // check duplicate
     const alreadyInvited = hive.members.some((m) => {
       return (
         (memberId && m.memberId?.equals(memberId)) ||
@@ -465,12 +459,11 @@ const inviteMember = async (req, res) => {
     if (alreadyInvited) {
       return res.status(400).json({
         success: false,
-        message: "User already invited",
+        message: "User already invited or already a member",
       });
     }
 
-    const now = new Date();
-    const expiryDate = new Date(now);
+    const expiryDate = new Date();
     expiryDate.setMonth(expiryDate.getMonth() + 1);
 
     hive.members.push({
@@ -495,23 +488,34 @@ const inviteMember = async (req, res) => {
 
       const acceptUrl = `${req.protocol}://${req.get("host")}/api/hives/${hive._id}/accept-request?email=${email}`;
 
+      const inviteHTML = `
+        <div style="font-family:sans-serif">
+          <h2>You are invited to a Hive 🐝</h2>
+          <p><strong>${req.user.name || "A user"}</strong> invited you to:</p>
+          <h3>${hive.hiveName}</h3>
+          <a href="${acceptUrl}" 
+            style="padding:10px 18px;background:#000;color:#fff;border-radius:6px;text-decoration:none;">
+            Accept Invitation
+          </a>
+        </div>
+      `;
+
       await transporter.sendMail({
         from: `"SnapHive" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: `Invitation to join "${hive.hiveName}"`,
-        html: `<h2>You are invited to join ${hive.hiveName}</h2>
-               <a href="${acceptUrl}">Accept Invitation</a>`,
+        html: inviteHTML,
       });
     }
 
-    /* PHONE INVITE (SMS) */
+    /* PHONE INVITE using same Twilio Verify */
     if (phone) {
-      await twilioClient.messages.create({
-        body: `You are invited to join "${hive.hiveName}" on SnapHive.
-Login to accept the invitation.`,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: phone,
-      });
+      await twilioClient.verify.v2
+        .services(process.env.TWILIO_VERIFY_SERVICE_SID)
+        .verifications.create({
+          to: phone,
+          channel: "sms",
+        });
     }
 
     res.status(200).json({
