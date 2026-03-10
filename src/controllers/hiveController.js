@@ -91,6 +91,55 @@ const createHive = async (req, res) => {
   }
 };
 
+const updateHive = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { hiveId } = req.params;
+
+    const {
+      hiveName,
+      description,
+      privacyMode,
+      eventDate,
+      startTime,
+      endTime,
+      expiryDate,
+      coverImage,
+    } = req.body;
+
+    const hive = await Hive.findOne({ _id: hiveId, user: userId });
+
+    if (!hive) {
+      return res.status(404).json({
+        success: false,
+        message: "Hive not found or unauthorized",
+      });
+    }
+
+    if (hiveName !== undefined) hive.hiveName = hiveName;
+    if (description !== undefined) hive.description = description;
+    if (privacyMode !== undefined) hive.privacyMode = privacyMode;
+    if (eventDate !== undefined) hive.eventDate = eventDate;
+    if (startTime !== undefined) hive.startTime = startTime;
+    if (endTime !== undefined) hive.endTime = endTime;
+    if (expiryDate !== undefined) hive.expiryDate = expiryDate;
+    if (coverImage !== undefined) hive.coverImage = coverImage;
+
+    await hive.save();
+
+    res.json({
+      success: true,
+      message: "Hive updated successfully",
+      data: hive,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
 
 
 const saveHiveImageUrls = async (req, res) => {
@@ -670,4 +719,4 @@ const joinHiveByQR = async (req, res) => {
   }
 };
 
-module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive,joinHiveByQR };
+module.exports = { createHive,updateHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive,joinHiveByQR };
