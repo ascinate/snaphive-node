@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const protect = require("../middleware/authMiddleware");
-const { createHive, getUserHives, saveHiveImageUrls, inviteMember, acceptHiveInvite, getHiveById,blurHiveImage,deleteHive } = require("../controllers/hiveController");
+const { createHive, getUserHives, saveHiveImageUrls, inviteMember, acceptHiveInvite, getHiveById,blurHiveImage,deleteHive,joinHiveByQR } = require("../controllers/hiveController");
 
 // ✅ Use memory storage instead of disk storage
 const storage = multer.memoryStorage();
@@ -22,6 +22,7 @@ router.post("/:hiveId/images", protect, saveHiveImageUrls);
 
 router.post("/:hiveId/invite", protect, inviteMember);
 router.get("/:hiveId/accept-request", acceptHiveInvite);
+router.post("/:hiveId/join", protect, joinHiveByQR);
 router.put("/:hiveId/blur-image", protect, blurHiveImage);
 router.delete("/:hiveId", protect, deleteHive);
 

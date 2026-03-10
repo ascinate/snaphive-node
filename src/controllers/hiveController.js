@@ -625,4 +625,49 @@ const acceptHiveInvite = async (req, res) => {
   }
 };
 
-module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, acceptHiveInviteByEmail, blurHiveImage, deleteHive };
+const joinHiveByQR = async (req, res) => {
+  try {
+    const { hiveId } = req.params;
+    const userId = req.user.id;
+
+    const hive = await Hive.findById(hiveId);
+
+    if (!hive) {
+      return res.status(404).json({
+        success: false,
+        message: "Hive not found",
+      });
+    }
+
+    const alreadyMember = hive.members.some(
+      (m) => m.memberId && m.memberId.toString() === userId
+    );
+
+    if (alreadyMember) {
+      return res.status(400).json({
+        success: false,
+        message: "Already a member",
+      });
+    }
+
+    hive.members.push({
+      memberId: userId,
+      status: "accepted",
+    });
+
+    await hive.save();
+
+    res.json({
+      success: true,
+      message: "Joined hive successfully",
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive,joinHiveByQR };
