@@ -22,7 +22,7 @@ router.post("/:hiveId/images", protect, saveHiveImageUrls);
 
 router.post("/:hiveId/invite", protect, inviteMember);
 router.get("/:hiveId/accept-request", acceptHiveInvite);
-router.post("/:hiveId/join", protect, joinHiveByQR);
+router.post("/:hiveId/join", joinHiveByQR);
 router.put("/:hiveId/blur-image", protect, blurHiveImage);
 router.delete("/:hiveId", protect, deleteHive);
 
