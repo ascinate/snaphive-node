@@ -44,7 +44,8 @@ const hiveSchema = new mongoose.Schema({
   members: [
     {
       memberId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-      email: { type: String, required: true },
+      email: { type: String, default: null },
+      phone: { type: String, default: null },
       status: { type: String, enum: ["pending", "accepted"], default: "pending" },
       expiryDate: {
         type: Date, default: function () {

@@ -93,29 +93,29 @@ const saveHiveImageUrls = async (req, res) => {
     const userId = req.user.id;
     const uploader = await User.findById(userId).select("name");
     const uploaderName = uploader?.name || "Someone";
- 
+
     const userEmail = req.user.email;
     const hiveId = req.params.hiveId;
     const { images = [], videos = [] } = req.body;
- 
+
     if (!images.length && !videos.length) {
       return res.status(400).json({ message: "No media URLs provided" });
     }
- 
+
     const hive = await Hive.findById(hiveId);
     if (!hive) {
       return res.status(404).json({ message: "Hive not found" });
     }
- 
+
     const isOwner = hive.user.toString() === userId;
     const isMember = hive.members.some(
       m => m.email === userEmail && m.status === "accepted"
     );
- 
+
     if (!isOwner && !isMember) {
       return res.status(403).json({ message: "Not allowed to upload" });
     }
- 
+
     // IMAGES
     if (images.length) {
       const imageObjects = images.map(url => ({
@@ -124,7 +124,7 @@ const saveHiveImageUrls = async (req, res) => {
       }));
       hive.images.push(...imageObjects);
     }
- 
+
     // VIDEOS
     if (videos.length) {
       const videoObjects = videos.map(video => ({
@@ -135,23 +135,23 @@ const saveHiveImageUrls = async (req, res) => {
       }));
       hive.videos.push(...videoObjects);
     }
- 
+
     await hive.save();
- 
+
     const mediaLabel =
       images.length && videos.length
         ? "media"
         : images.length
-        ? "photos"
-        : "videos";
- 
+          ? "photos"
+          : "videos";
+
     const notificationType =
       images.length && videos.length
         ? "MEDIA_UPLOADED"
         : images.length
-        ? "PHOTO_UPLOADED"
-        : "VIDEO_UPLOADED";
- 
+          ? "PHOTO_UPLOADED"
+          : "VIDEO_UPLOADED";
+
     // MEMBER → OWNER
     if (!isOwner) {
       const owner = await User.findById(hive.user);
@@ -168,18 +168,18 @@ const saveHiveImageUrls = async (req, res) => {
         );
       }
     }
- 
+
     // OWNER → MEMBERS
     if (isOwner) {
       const memberIds = hive.members
         .filter(m => m.status === "accepted" && m.memberId)
         .map(m => m.memberId);
- 
+
       const members = await User.find({
         _id: { $in: memberIds },
         fcmToken: { $ne: null },
       });
- 
+
       for (const member of members) {
         await sendPush(
           member.fcmToken,
@@ -193,13 +193,13 @@ const saveHiveImageUrls = async (req, res) => {
         );
       }
     }
- 
+
     res.json({
       success: true,
       images: hive.images,
       videos: hive.videos,
     });
- 
+
   } catch (err) {
     console.error("Save media URLs error:", err);
     res.status(500).json({ message: err.message });
@@ -420,17 +420,22 @@ const getHiveById = async (req, res) => {
 };
 
 
-const inviteMemberByEmail = async (req, res) => {
+const inviteMember = async (req, res) => {
   try {
     const inviterId = req.user.id;
     const { hiveId } = req.params;
-    const { email } = req.body;
+    let { email, phone } = req.body;
 
-    if (!email) {
+    if (!email && !phone) {
       return res.status(400).json({
         success: false,
-        message: "Receiver email is required",
+        message: "Email or phone is required",
       });
+    }
+
+    // normalize phone
+    if (phone && !phone.startsWith("+")) {
+      phone = `+91${phone}`;
     }
 
     const hive = await Hive.findOne({ _id: hiveId, user: inviterId });
@@ -441,102 +446,87 @@ const inviteMemberByEmail = async (req, res) => {
       });
     }
 
-    // Check if the user exists
-    const invitedUser = await User.findOne({ email });
+    let invitedUser = null;
+
+    if (email) invitedUser = await User.findOne({ email });
+    if (phone) invitedUser = await User.findOne({ phone });
+
     const memberId = invitedUser ? invitedUser._id : null;
 
-    // Check if already invited
-    const alreadyInvited = hive.members.some(
-      (m) => (m.memberId && m.memberId.equals(memberId)) || m.email === email
-    );
+    // check duplicate
+    const alreadyInvited = hive.members.some((m) => {
+      return (
+        (memberId && m.memberId?.equals(memberId)) ||
+        (email && m.email === email) ||
+        (phone && m.phone === phone)
+      );
+    });
+
     if (alreadyInvited) {
       return res.status(400).json({
         success: false,
-        message: "User is already invited or a hive member",
+        message: "User already invited",
       });
     }
 
-    // Add to hive members
     const now = new Date();
     const expiryDate = new Date(now);
     expiryDate.setMonth(expiryDate.getMonth() + 1);
 
     hive.members.push({
       memberId,
-      email,
+      email: email || null,
+      phone: phone || null,
       status: "pending",
       expiryDate,
     });
 
     await hive.save();
 
-    // Send invitation email
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    /* EMAIL INVITE */
+    if (email) {
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
 
-    const acceptUrl = `${req.protocol}://${req.get("host")}/api/hives/${hive._id}/accept-request?email=${email}`;
+      const acceptUrl = `${req.protocol}://${req.get("host")}/api/hives/${hive._id}/accept-request?email=${email}`;
 
-    const inviteHTML = `
-      <div style="font-family:sans-serif;line-height:1.6">
-        <h2>You are invited to a Hive 🐝</h2>
+      await transporter.sendMail({
+        from: `"SnapHive" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: `Invitation to join "${hive.hiveName}"`,
+        html: `<h2>You are invited to join ${hive.hiveName}</h2>
+               <a href="${acceptUrl}">Accept Invitation</a>`,
+      });
+    }
 
-        <p>
-          <strong>${req.user.name || "A user"}</strong> has invited you to join the hive:
-        </p>
-
-        <h3 style="background:#f2f2f2;padding:10px;border-radius:6px;">
-          ${hive.hiveName}
-        </h3>
-
-        <p>Login to SnapHive to accept this invitation.</p>
-
-        <div style="margin:20px 0;">
-          <a href="${acceptUrl}"
-            style="
-              display:inline-block;
-              padding:10px 18px;
-              background:#000;
-              color:#fff;
-              border-radius:6px;
-              text-decoration:none;
-              font-weight:600;
-            ">
-            ✅ Accept Invitation
-          </a>
-        </div>
-
-        <p style="font-size:12px;color:#777;margin-top:20px;">
-          This invitation was sent from SnapHive.
-        </p>
-      </div>
-    `;
-
-    await transporter.sendMail({
-      from: `"SnapHive" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: `Invitation to join "${hive.hiveName}"`,
-      html: inviteHTML,
-    });
+    /* PHONE INVITE (SMS) */
+    if (phone) {
+      await twilioClient.messages.create({
+        body: `You are invited to join "${hive.hiveName}" on SnapHive.
+Login to accept the invitation.`,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: phone,
+      });
+    }
 
     res.status(200).json({
       success: true,
-      message: "Invitation email sent and member added successfully",
-      member: { memberId, email, status: "pending", expiryDate },
+      message: "Invitation sent successfully",
     });
+
   } catch (err) {
-    console.error("Invite mail error:", err);
+    console.error("Invite error:", err);
     res.status(500).json({
       success: false,
       message: err.message,
     });
   }
 };
-
 const acceptHiveInvite = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -679,4 +669,4 @@ const acceptHiveInviteByEmail = async (req, res) => {
 };
 
 
-module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMemberByEmail, acceptHiveInvite, acceptHiveInviteByEmail, blurHiveImage, deleteHive };
+module.exports = { createHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, acceptHiveInviteByEmail, blurHiveImage, deleteHive };
