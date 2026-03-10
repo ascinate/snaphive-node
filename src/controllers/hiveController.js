@@ -513,14 +513,21 @@ const inviteMember = async (req, res) => {
       });
     }
 
-    /* PHONE INVITE using same Twilio Verify */
+    /* PHONE INVITE SMS */
     if (phone) {
-      await twilioClient.verify.v2
-        .services(process.env.TWILIO_VERIFY_SERVICE_SID)
-        .verifications.create({
-          to: phone,
-          channel: "sms",
-        });
+
+      const inviteLink = `${req.protocol}://${req.get("host")}/api/hives/${hive._id}/accept-request?phone=${phone}`;
+
+      const smsMessage = `${req.user.name || "Someone"} invited you to join the hive "${hive.hiveName}" on SnapHive 🐝.
+
+      Join here:
+      ${inviteLink}`;
+
+      await twilioClient.messages.create({
+        body: smsMessage,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: phone,
+      });
     }
 
     res.status(200).json({
