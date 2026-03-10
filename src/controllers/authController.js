@@ -75,15 +75,18 @@ const register = async (req, res) => {
       otpExpires = Date.now() + 5 * 60 * 1000;
     }
 
-    const user = await User.create({
+    const userData = {
       name,
-      email: email || null,
-      phone: phone || null,
       password,
       provider: phone ? "phone" : "email",
       otp,
       otpExpires,
-    });
+    };
+
+    if (email) userData.email = email;
+    if (phone) userData.phone = phone;
+
+    const user = await User.create(userData);
 
     /* SEND EMAIL OTP */
     if (email) {
