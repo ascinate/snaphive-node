@@ -313,76 +313,67 @@ function showToast(message, type = "success") {
 </script>
 
 <script>
-    function openChatManager(hiveId) {
-        openModal(
-            "💬 Chat Management",
-            `
+ 
+async function openChatManager(hiveId) {
+
+  const res = await fetch(`/hive/${hiveId}/chats`);
+  const data = await res.json();
+
+  let messagesHTML = "";
+
+  data.messages.forEach(msg => {
+
+    const time = new Date(msg.createdAt.seconds * 1000)
+      .toLocaleString();
+
+    messagesHTML += `
+      <div class="chat-message ${msg.senderId ? "user" : "admin"}">
+        <div>
+          <div class="chat-meta">
+            👤 ${msg.senderId} • ${time}
+          </div>
+
+          <div class="chat-text">
+            ${msg.text}
+          </div>
+        </div>
+
+        <button class="delete-btn" onclick="deleteMessage('${msg.id}')">
+          🗑
+        </button>
+      </div>
+    `;
+  });
+
+  openModal(
+    "💬 Chat Management",
+    `
     <div class="chat-wrapper">
 
       <div class="chat-header">
         <strong>Hive ID:</strong> ${hiveId}
-        <span style="float:right;color:#777;font-size:13px">
-          Static Demo
-        </span>
       </div>
 
       <div class="chat-box">
-
-        <div class="chat-message user">
-          <div>
-            <div class="chat-meta">👤 Rahul • 12 Jan 2026, 10:14 AM</div>
-            <div class="chat-text">
-              Hey everyone! Upload your photos here 📸
-            </div>
-          </div>
-          <button class="delete-btn">🗑</button>
-        </div>
-
-        <div class="chat-message admin">
-          <div>
-            <div class="chat-meta">🛡 Admin • 12 Jan 2026, 10:16 AM</div>
-            <div class="chat-text">
-              Please avoid uploading blurred images.
-            </div>
-          </div>
-          <button class="delete-btn">🗑</button>
-        </div>
-
-        <div class="chat-message user">
-          <div>
-            <div class="chat-meta">👤 Priya • 12 Jan 2026, 10:20 AM</div>
-            <div class="chat-text">
-              Got it 👍
-            </div>
-          </div>
-          <button class="delete-btn">🗑</button>
-        </div>
-
+        ${messagesHTML || "<p>No messages</p>"}
       </div>
 
-      <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        margin-top:15px;
-      ">
-        <!-- Back Button -->
-        <button
-          onclick="openDetails('${hiveId}')"
-        >
+      <div style="display:flex;justify-content:space-between;margin-top:15px;">
+
+        <button onclick="openDetails('${hiveId}')">
           ⬅ Back to Hive
         </button>
 
-        <!-- Danger -->
         <button class="btn btn-danger btn-sm">
           🚨 Clear Entire Chat
         </button>
+
       </div>
 
     </div>
     `
-        );
-    }
+  );
+}
 </script>
 
 

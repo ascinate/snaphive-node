@@ -1,6 +1,8 @@
 const Admin = require("../models/Admin");
 const Hive = require("../models/Hive");
 const User = require("../models/User");
+const admin = require("firebase-admin");
+const db = admin.firestore();
 
 const mongoose = require("mongoose");
 const PAGE_LIMIT = 10;
@@ -19,6 +21,62 @@ const getAllAdmins = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
+
+
+const getHivechats = async (req, res) => {
+  try {
+    const { id } = req.params; // hiveId from URL
+
+    const chatsSnapshot = await db
+      .collection("chats")
+      .where("hiveId", "==", id)
+      .get();
+
+    let allMessages = [];
+
+    for (const chatDoc of chatsSnapshot.docs) {
+
+      const chatData = chatDoc.data();
+
+      const messagesSnap = await db
+        .collection("chats")
+        .doc(chatDoc.id)
+        .collection("messages")
+        .orderBy("createdAt", "asc")
+        .get();
+
+      messagesSnap.forEach((msg) => {
+        const data = msg.data();
+
+        allMessages.push({
+          id: msg.id,
+          chatId: chatDoc.id,
+          text: data.text,
+          senderId: data.senderId,
+          senderName: chatData.userNames?.[data.senderId] || "User",
+          createdAt: data.createdAt
+            ? data.createdAt.toDate()
+            : null
+        });
+      });
+    }
+
+    res.json({
+      success: true,
+      messages: allMessages
+    });
+
+  } catch (error) {
+    console.error("❌ Chat fetch error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch chats"
+    });
+  }
+};
+
 
 /* -------------------- GET ADMIN BY ID -------------------- */
 const getAdminById = async (req, res) => {
@@ -459,5 +517,5 @@ module.exports = {
   softDeleteUser,
   resetUserAccount,
   getAllImages,
-  
+  getHivechats
 };
