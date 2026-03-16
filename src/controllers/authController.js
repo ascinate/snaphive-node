@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const twilio = require("twilio");
 const appleSigninAuth = require("apple-signin-auth");
-const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID,
