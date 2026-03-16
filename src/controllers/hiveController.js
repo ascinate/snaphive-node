@@ -11,46 +11,6 @@ const twilioClient = twilio(
 );
 
 
-
-function formatTo12Hour(time) {
-  if (!time) return null;
-
-  let strTime = String(time).trim().toLowerCase();
-
-  let hour, minute;
-
-  // Check if input has am/pm
-  const isAmPm = strTime.includes("am") || strTime.includes("pm");
-
-  if (isAmPm) {
-    // Example: "1:16 pm" or "12:09 am"
-    const [timePart, modifier] = strTime.split(" "); // ["1:16", "pm"]
-    const parts = timePart.split(":");
-
-    hour = Number(parts[0]);
-    minute = parts.length > 1 ? Number(parts[1]) : 0;
-
-    if (modifier === "pm" && hour < 12) hour += 12;
-    if (modifier === "am" && hour === 12) hour = 0;
-
-  } else {
-    // 24-hour format: "13:20" or "00:45"
-    const parts = strTime.split(":");
-    hour = Number(parts[0]);
-    minute = parts.length > 1 ? Number(parts[1]) : 0;
-  }
-
-  // Safety check
-  if (isNaN(hour) || isNaN(minute)) return null;
-
-  // Convert to 12-hour format
-  const ampm = hour >= 12 ? "PM" : "AM";
-  const displayHour = hour % 12 || 12;
-
-  return `${String(displayHour).padStart(2, "0")}:${String(minute).padStart(2, "0")} ${ampm}`;
-}
-
-
 const createHive = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -404,6 +364,30 @@ const getUserHives = async (req, res) => {
   }
 };
 
+const getPublicHives = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const hives = await Hive.find({
+      privacyMode: "public",
+    })
+      .populate("user", "name email profileImage")
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    res.status(200).json({
+      success: true,
+      count: hives.length,
+      hives,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
 
 const getHiveById = async (req, res) => {
   try {
@@ -719,4 +703,4 @@ const joinHiveByQR = async (req, res) => {
   }
 };
 
-module.exports = { createHive,updateHive, getUserHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive,joinHiveByQR };
+module.exports = { createHive,updateHive, getUserHives,getPublicHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive,joinHiveByQR };
