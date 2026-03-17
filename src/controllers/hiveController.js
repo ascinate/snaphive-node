@@ -366,12 +366,11 @@ const getUserHives = async (req, res) => {
 
 const getPublicHives = async (req, res) => {
   try {
-    const userId = req.user.id;
-
     const hives = await Hive.find({
       privacyMode: "public",
     })
       .populate("user", "name email profileImage")
+      .populate("comments.user", "name profileImage")
       .sort({ createdAt: -1 })
       .limit(50);
 
@@ -392,14 +391,28 @@ const getPublicHives = async (req, res) => {
 const toggleLikeHive = async (req, res) => {
   try {
     const userId = req.user.id;
-    const hive = await Hive.findById(req.params.id);
+    const { hiveId } = req.params; // ✅ FIXED
 
-    if (!hive) return res.status(404).json({ message: "Hive not found" });
+    const hive = await Hive.findById(hiveId);
 
-    const alreadyLiked = hive.likes.includes(userId);
+    if (!hive) {
+      return res.status(404).json({
+        success: false,
+        message: "Hive not found",
+      });
+    }
+
+    // ensure likes array exists
+    if (!hive.likes) hive.likes = [];
+
+    const alreadyLiked = hive.likes.some(
+      id => id.toString() === userId
+    );
 
     if (alreadyLiked) {
-      hive.likes = hive.likes.filter(id => id.toString() !== userId);
+      hive.likes = hive.likes.filter(
+        id => id.toString() !== userId
+      );
     } else {
       hive.likes.push(userId);
     }
@@ -408,37 +421,68 @@ const toggleLikeHive = async (req, res) => {
 
     res.json({
       success: true,
-      likes: hive.likes.length,
+      likesCount: hive.likes.length,
       liked: !alreadyLiked,
     });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Like error:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
-
 
 const addComment = async (req, res) => {
   try {
     const { text } = req.body;
     const userId = req.user.id;
+    const { hiveId } = req.params; // ✅ FIXED
 
-    const hive = await Hive.findById(req.params.id);
+    if (!text || text.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Comment text is required",
+      });
+    }
 
-    if (!hive) return res.status(404).json({ message: "Hive not found" });
+    const hive = await Hive.findById(hiveId);
 
-    hive.comments.push({
+    if (!hive) {
+      return res.status(404).json({
+        success: false,
+        message: "Hive not found",
+      });
+    }
+
+    // ensure comments array exists
+    if (!hive.comments) hive.comments = [];
+
+    const newComment = {
       user: userId,
-      text,
-    });
+      text: text.trim(),
+      createdAt: new Date(),
+    };
+
+    hive.comments.push(newComment);
 
     await hive.save();
+
+    // 🔥 populate user info for frontend
+    await hive.populate("comments.user", "name profileImage");
 
     res.json({
       success: true,
       comments: hive.comments,
     });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Comment error:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
