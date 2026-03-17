@@ -389,6 +389,60 @@ const getPublicHives = async (req, res) => {
 };
 
 
+const toggleLikeHive = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const hive = await Hive.findById(req.params.id);
+
+    if (!hive) return res.status(404).json({ message: "Hive not found" });
+
+    const alreadyLiked = hive.likes.includes(userId);
+
+    if (alreadyLiked) {
+      hive.likes = hive.likes.filter(id => id.toString() !== userId);
+    } else {
+      hive.likes.push(userId);
+    }
+
+    await hive.save();
+
+    res.json({
+      success: true,
+      likes: hive.likes.length,
+      liked: !alreadyLiked,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+const addComment = async (req, res) => {
+  try {
+    const { text } = req.body;
+    const userId = req.user.id;
+
+    const hive = await Hive.findById(req.params.id);
+
+    if (!hive) return res.status(404).json({ message: "Hive not found" });
+
+    hive.comments.push({
+      user: userId,
+      text,
+    });
+
+    await hive.save();
+
+    res.json({
+      success: true,
+      comments: hive.comments,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
 const getHiveById = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -703,4 +757,4 @@ const joinHiveByQR = async (req, res) => {
   }
 };
 
-module.exports = { createHive,updateHive, getUserHives,getPublicHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive,joinHiveByQR };
+module.exports = { createHive,updateHive, getUserHives,toggleLikeHive,addComment,getPublicHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive,joinHiveByQR };
