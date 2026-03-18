@@ -25,9 +25,11 @@ const getAllAdmins = async (req, res) => {
 
 
 
+
+
 const getHivechats = async (req, res) => {
   try {
-    const { id } = req.params; // hiveId from URL
+    const { id } = req.params;
 
     const chatsSnapshot = await db
       .collection("chats")
@@ -35,10 +37,10 @@ const getHivechats = async (req, res) => {
       .get();
 
     let allMessages = [];
+    const senderIds = new Set(); // ✅ Step 1: collect IDs
 
+    // 🔹 First pass: collect messages + senderIds
     for (const chatDoc of chatsSnapshot.docs) {
-
-      const chatData = chatDoc.data();
 
       const messagesSnap = await db
         .collection("chats")
@@ -50,12 +52,15 @@ const getHivechats = async (req, res) => {
       messagesSnap.forEach((msg) => {
         const data = msg.data();
 
+        if (data.senderId) {
+          senderIds.add(data.senderId.toString()); // ✅ collect IDs
+        }
+
         allMessages.push({
           id: msg.id,
           chatId: chatDoc.id,
           text: data.text,
           senderId: data.senderId,
-          senderName: chatData.userNames?.[data.senderId] || "User",
           createdAt: data.createdAt
             ? data.createdAt.toDate()
             : null
@@ -63,6 +68,24 @@ const getHivechats = async (req, res) => {
       });
     }
 
+    // ✅ Step 2: Fetch all users at once
+    const users = await User.find({
+      _id: { $in: Array.from(senderIds) }
+    }).select("name");
+
+    // ✅ Step 3: Create user map
+    const userMap = {};
+    users.forEach((u) => {
+      userMap[u._id.toString()] = u.name;
+    });
+
+    // ✅ Step 4: Attach senderName to messages
+    allMessages = allMessages.map((msg) => ({
+      ...msg,
+      senderName: userMap[msg.senderId?.toString()] || "User"
+    }));
+
+    // ✅ Response
     res.json({
       success: true,
       messages: allMessages
@@ -77,6 +100,83 @@ const getHivechats = async (req, res) => {
   }
 };
 
+const deleteMessage = async (req, res) => {
+  try {
+    const { chatId, messageId } = req.params;
+
+    // ✅ CASE 1: Single message delete
+    if (messageId) {
+      await db
+        .collection("chats")
+        .doc(chatId)
+        .collection("messages")
+        .doc(messageId)
+        .delete();
+
+      return res.json({
+        success: true,
+        message: "Message deleted successfully"
+      });
+    }
+
+    // 🚀 CASE 2: Clear entire hive chats (IMPORTANT FIX)
+    // chatId here is actually hiveId from frontend
+
+    const hiveId = chatId;
+
+    const chatsSnapshot = await db
+      .collection("chats")
+      .where("hiveId", "==", hiveId)
+      .get();
+
+    if (chatsSnapshot.empty) {
+      return res.json({
+        success: true,
+        message: "No chats found"
+      });
+    }
+
+    // 🔥 Loop each chat
+    for (const chatDoc of chatsSnapshot.docs) {
+      const messagesSnap = await db
+        .collection("chats")
+        .doc(chatDoc.id)
+        .collection("messages")
+        .get();
+
+      let batch = db.batch();
+      let count = 0;
+
+      for (const msg of messagesSnap.docs) {
+        batch.delete(msg.ref);
+        count++;
+
+        if (count === 500) {
+          await batch.commit();
+          batch = db.batch();
+          count = 0;
+        }
+      }
+
+      if (count > 0) {
+        await batch.commit();
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: "All messages deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("❌ Delete error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete"
+    });
+  }
+};
 
 /* -------------------- GET ADMIN BY ID -------------------- */
 const getAdminById = async (req, res) => {
@@ -517,5 +617,6 @@ module.exports = {
   softDeleteUser,
   resetUserAccount,
   getAllImages,
-  getHivechats
+  getHivechats,
+  deleteMessage
 };
