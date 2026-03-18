@@ -103,8 +103,6 @@ const getHivechats = async (req, res) => {
 const deleteMessage = async (req, res) => {
   try {
     const { chatId, messageId } = req.params;
-
-    // ✅ CASE 1: Single message delete
     if (messageId) {
       await db
         .collection("chats")
@@ -118,10 +116,6 @@ const deleteMessage = async (req, res) => {
         message: "Message deleted successfully"
       });
     }
-
-    // 🚀 CASE 2: Clear entire hive chats (IMPORTANT FIX)
-    // chatId here is actually hiveId from frontend
-
     const hiveId = chatId;
 
     const chatsSnapshot = await db
@@ -135,8 +129,6 @@ const deleteMessage = async (req, res) => {
         message: "No chats found"
       });
     }
-
-    // 🔥 Loop each chat
     for (const chatDoc of chatsSnapshot.docs) {
       const messagesSnap = await db
         .collection("chats")
