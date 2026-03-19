@@ -495,6 +495,7 @@ const getHiveById = async (req, res) => {
     const hive = await Hive.findOne({
       _id: hiveId,
       $or: [
+        { privacyMode: "public" },
         { user: userId },
         {
           members: {
@@ -801,4 +802,4 @@ const joinHiveByQR = async (req, res) => {
   }
 };
 
-module.exports = { createHive,updateHive, getUserHives,toggleLikeHive,addComment,getPublicHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive,joinHiveByQR };
+module.exports = { createHive, updateHive, getUserHives, toggleLikeHive, addComment, getPublicHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive, joinHiveByQR };
