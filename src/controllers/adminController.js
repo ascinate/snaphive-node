@@ -354,9 +354,12 @@ const getAllHives = async (req, res) => {
 const getHiveDetails = async (req, res) => {
   const hive = await Hive.findById(req.params.id)
     .populate("user", "name email")
-    .populate("members.memberId", "name email"); 
+    .populate("members.memberId", "name email")
+    .populate("comments.user", "name profileImage");
 
-  if (!hive) return res.status(404).json({ success: false });
+  if (!hive) {
+    return res.status(404).json({ success: false });
+  }
 
   res.json({ success: true, hive });
 };

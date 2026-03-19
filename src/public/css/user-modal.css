@@ -957,5 +957,119 @@ tbody tr td[colspan] {
   background: #991b1b;
 }
 
+.hive-layout {
+  display: flex;
+  gap: 20px;
+  height: 520px;
+}
+
+/* LEFT */
+.hive-left {
+  width: 60%;
+  display: flex;
+  flex-direction: column;
+}
+
+.hive-cover img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.hive-body {
+  margin-top: 15px;
+  flex: 1;
+}
+
+.hive-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.hive-row.description {
+  flex-direction: column;
+}
+
+/* 🔥 FIXED FOOTER (BUTTON ALWAYS VISIBLE) */
+.hive-footer-fixed {
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* RIGHT */
+.hive-right {
+  width: 40%;
+  background: #f8f9fb;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.comments-header {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* SCROLL */
+.comments-box {
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* COMMENT CARD */
+.comment-card {
+  background: #fff;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.comment-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comment-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comment-user img,
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ddd;
+}
+
+.comment-text {
+  margin-top: 5px;
+  font-size: 14px;
+}
+
+.time {
+  font-size: 11px;
+  color: #888;
+}
+
+.no-comments {
+  text-align: center;
+  color: #999;
+}
+
 
 

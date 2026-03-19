@@ -193,71 +193,112 @@
           modalBody.innerHTML = "";
         }
 
-
         async function openDetails(hiveId) {
           const res = await fetch(`/hive/${hiveId}`);
           const { hive } = await res.json();
 
-          openModal("Hive Details", `
-    <div class="hive-modal">
-      
-      <div class="hive-cover">
-        ${hive.coverImage
-              ? `<img src="${hive.coverImage}" alt="Hive Cover">`
-              : `<div class="no-cover">No Cover Image</div>`
-            }
-      </div>
+          const commentsHTML = hive.comments?.length
+            ? hive.comments.map(c => `
+      <div class="comment-card">
 
-      <div class="hive-body">
+        <div class="comment-top">
+          <div class="comment-user">
+            ${c.user?.profileImage
+                ? `<img src="${c.user.profileImage}" />`
+                : `<div class="avatar">👤</div>`
+              }
+            <span>${c.user?.name || "User"}</span>
+          </div>
 
-        <div class="hive-row">
-          <span>Members</span>
-          <strong>
-            ${hive.members && hive.members.length > 0
-              ? hive.members.map(m => `${m.memberId?.name || m.email} (${m.status})`).join(', ')
-              : "No members"}
-          </strong>
-        </div>
-        <div class="hive-row">
-          <span>Owner</span>
-          <strong>${hive.user?.name || "N/A"}</strong>
-        </div>
-
-        <div class="hive-row">
-          <span>Email</span>
-          <strong>${hive.user?.email || "—"}</strong>
-        </div>
-
-        <div class="hive-row">
-          <span>Privacy</span>
-          <span class="badge ${hive.privacyMode}">
-            ${hive.privacyMode}
+          <span class="time">
+            ${new Date(c.createdAt).toLocaleString()}
           </span>
         </div>
 
-        <div class="hive-row description">
-          <span>Description</span>
-          <p>${hive.description || "No description provided."}</p>
+        <div class="comment-text">
+          ${c.text}
         </div>
 
-        <div class="hive-footer">
-          Created on ${new Date(hive.createdAt).toDateString()}
+      </div>
+    `).join("")
+            : `<p class="no-comments">No comments yet</p>`;
 
-          <div style="margin-top:12px;">
+          openModal("Hive Details", `
+    <div class="hive-modal">
+
+      <div class="hive-layout">
+
+        <!-- LEFT SIDE -->
+        <div class="hive-left">
+
+          <div class="hive-cover">
+            ${hive.coverImage
+              ? `<img src="${hive.coverImage}" alt="Hive Cover">`
+              : `<div class="no-cover">No Cover Image</div>`
+            }
+          </div>
+
+          <div class="hive-body">
+
+            <div class="hive-row">
+              <span>Members</span>
+              <strong>
+                ${hive.members?.length
+              ? hive.members.map(m => `${m.memberId?.name || m.email} (${m.status})`).join(', ')
+              : "No members"}
+              </strong>
+            </div>
+
+            <div class="hive-row">
+              <span>Owner</span>
+              <strong>${hive.user?.name || "N/A"}</strong>
+            </div>
+
+            <div class="hive-row">
+              <span>Email</span>
+              <strong>${hive.user?.email || "—"}</strong>
+            </div>
+
+            <div class="hive-row">
+              <span>Privacy</span>
+              <span class="badge ${hive.privacyMode}">
+                ${hive.privacyMode}
+              </span>
+            </div>
+
+            <div class="hive-row description">
+              <span>Description</span>
+              <p>${hive.description || "No description provided."}</p>
+            </div>
+
+          </div>
+
+          <!-- 🔥 KEEP BUTTON ALWAYS VISIBLE -->
+          <div class="hive-footer-fixed">
             <button class="btn btn-primary btn-sm"
               onclick="openChatManager('${hive._id}')">
               💬 Manage Chat
             </button>
           </div>
+
         </div>
 
+        <!-- RIGHT SIDE (COMMENTS) -->
+        <div class="hive-right">
+          <div class="comments-header">
+            💬 Comments (${hive.comments?.length || 0})
+          </div>
+
+          <div class="comments-box">
+            ${commentsHTML}
+          </div>
+        </div>
 
       </div>
+
     </div>
   `);
         }
-
-
 
         async function openImages(hiveId) {
           const res = await fetch(`/hive/${hiveId}/images`);
