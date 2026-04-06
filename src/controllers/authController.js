@@ -11,7 +11,7 @@ const twilioClient = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
-const sendOTPEmail = async (email, otp) => {
+const sendEmail = async (email, subject, html) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -23,15 +23,8 @@ const sendOTPEmail = async (email, otp) => {
   await transporter.sendMail({
     from: `"SnapHive" <${process.env.EMAIL_USER}>`,
     to: email,
-    subject: "Your SnapHive OTP Verification Code",
-    html: `
-      <div style="font-family:sans-serif;line-height:1.6">
-        <h2>Welcome to SnapHive 🎉</h2>
-        <p>Your OTP code is:</p>
-        <h1 style="background:#000;color:#fff;display:inline-block;padding:8px 16px;border-radius:8px;">${otp}</h1>
-        <p>This code will expire in 5 minutes.</p>
-      </div>
-    `,
+    subject,
+    html,
   });
 };
 
@@ -88,10 +81,21 @@ const register = async (req, res) => {
 
     const user = await User.create(userData);
 
-    /* SEND EMAIL OTP */
-    if (email) {
-      await sendOTPEmail(email, otp);
-    }
+    await sendEmail(
+      email,
+      "Your SnapHive OTP Verification Code",
+      `
+  <div style="font-family:sans-serif;line-height:1.6">
+    <h2>Welcome to SnapHive 🎉</h2>
+    <p>Your OTP code is:</p>
+    <h1 style="background:#000;color:#fff;
+    display:inline-block;padding:8px 16px;border-radius:8px;">
+      ${otp}
+    </h1>
+    <p>This code will expire in 5 minutes.</p>
+  </div>
+  `
+    );
 
     /* SEND TWILIO OTP */
     if (phone) {
