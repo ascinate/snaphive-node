@@ -7,7 +7,8 @@ const {
   resetPassword,
   resendOTP,
   updateProfile,
-  appleLogin
+  appleLogin,
+  googleLogin
 } = require("../controllers/authController");
 const protect = require("../middleware/authMiddleware");
 const multer = require("multer");
@@ -30,6 +31,7 @@ router.get("/profile", protect, (req, res) => {
   res.json({ message: "Access granted", user: req.user });
 });
 router.post("/apple", appleLogin);
+router.post("/google", googleLogin);
 
 
 module.exports = router;

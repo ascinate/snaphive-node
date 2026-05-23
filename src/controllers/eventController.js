@@ -1,5 +1,5 @@
 const Event = require("../models/Event");
-const bucket = require("../config/firebase");
+const { bucket } = require("../config/firebase");
 const fs = require("fs");
 const path = require("path");
 

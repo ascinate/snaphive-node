@@ -1,5 +1,5 @@
 const Hive = require("../models/Hive");
-const bucket = require("../config/firebase");
+const { bucket } = require("../config/firebase");
 const { sendPush } = require("../utils/sendPush");
 const twilio = require("twilio");
 const nodemailer = require("nodemailer");
@@ -122,8 +122,15 @@ const saveHiveImageUrls = async (req, res) => {
     }
 
     const isOwner = hive.user.toString() === userId;
+
+    // Check membership by memberId (QR joins) OR by email (invite links)
     const isMember = hive.members.some(
-      m => m.email === userEmail && m.status === "accepted"
+      m =>
+        m.status === "accepted" &&
+        (
+          (m.memberId && m.memberId.toString() === userId) ||
+          (m.email && userEmail && m.email === userEmail)
+        )
     );
 
     if (!isOwner && !isMember) {
@@ -141,12 +148,22 @@ const saveHiveImageUrls = async (req, res) => {
 
     // VIDEOS
     if (videos.length) {
-      const videoObjects = videos.map(video => ({
-        url: video.url,
-        thumbnail: video.thumbnail || null,
-        duration: video.duration,
-        size: video.size,
-      }));
+      const videoObjects = videos.map(video => {
+        if (typeof video === 'string') {
+          return {
+            url: video,
+            thumbnail: null,
+            duration: 0,
+            size: 0,
+          };
+        }
+        return {
+          url: video.url || video,
+          thumbnail: video.thumbnail || null,
+          duration: video.duration || 0,
+          size: video.size || 0,
+        };
+      });
       hive.videos.push(...videoObjects);
     }
 
@@ -560,7 +577,9 @@ const inviteMember = async (req, res) => {
   try {
     const inviterId = req.user.id;
     const { hiveId } = req.params;
-    const { email, phone } = req.body;
+    let { email, phone } = req.body;
+    if (email) email = email.trim().toLowerCase();
+    if (phone) phone = phone.trim();
 
     if (!email && !phone) {
       return res.status(400).json({
@@ -614,39 +633,45 @@ const inviteMember = async (req, res) => {
     await hive.save();
 
     /* EMAIL INVITE */
-    if (email) {
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-      });
+    if (email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      try {
+        const transporter = nodemailer.createTransport({
+          service: "gmail",
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        });
 
-      const acceptUrl = `${req.protocol}://${req.get("host")}/api/hives/${hive._id}/accept-request?email=${email}`;
+        const acceptUrl = `${req.protocol}://${req.get("host")}/api/hives/${hive._id}/accept-request?email=${email}`;
 
-      const inviteHTML = `
-        <div style="font-family:sans-serif">
-          <h2>You are invited to a Hive 🐝</h2>
-          <p><strong>${req.user.name || "A user"}</strong> invited you to:</p>
-          <h3>${hive.hiveName}</h3>
-          <a href="${acceptUrl}" 
-            style="padding:10px 18px;background:#000;color:#fff;border-radius:6px;text-decoration:none;">
-            Accept Invitation
-          </a>
-        </div>
-      `;
+        const inviteHTML = `
+          <div style="font-family:sans-serif">
+            <h2>You are invited to a Hive 🐝</h2>
+            <p><strong>${req.user.name || "A user"}</strong> invited you to:</p>
+            <h3>${hive.hiveName}</h3>
+            <a href="${acceptUrl}" 
+              style="padding:10px 18px;background:#000;color:#fff;border-radius:6px;text-decoration:none;">
+              Accept Invitation
+            </a>
+          </div>
+        `;
 
-      await transporter.sendMail({
-        from: `"SnapHive" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: `Invitation to join "${hive.hiveName}"`,
-        html: inviteHTML,
-      });
+        await transporter.sendMail({
+          from: `"SnapHive" <${process.env.EMAIL_USER}>`,
+          to: email,
+          subject: `Invitation to join "${hive.hiveName}"`,
+          html: inviteHTML,
+        });
+      } catch (emailErr) {
+        console.error("Failed to send invitation email via SMTP. Error:", emailErr.message);
+      }
+    } else if (email) {
+      console.warn("⚠️ Email credentials missing. Invite created but email not sent.");
     }
 
     /* PHONE INVITE SMS */
-    if (phone) {
+    if (phone && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
 
       const inviteLink = `${req.protocol}://${req.get("host")}/api/hives/${hive._id}/accept-request?phone=${phone}`;
 
@@ -660,6 +685,8 @@ const inviteMember = async (req, res) => {
         from: process.env.TWILIO_PHONE_NUMBER,
         to: phone,
       });
+    } else if (phone) {
+      console.warn("⚠️ Twilio credentials missing. Invite created but SMS not sent.");
     }
 
     res.status(200).json({
@@ -678,7 +705,9 @@ const inviteMember = async (req, res) => {
 const acceptHiveInvite = async (req, res) => {
   try {
     const { hiveId } = req.params;
-    const { email, phone } = req.query;
+    let { email, phone } = req.query;
+    if (email) email = email.trim().toLowerCase();
+    if (phone) phone = phone.trim();
 
     if (!email && !phone) {
       return res.status(400).json({
@@ -742,11 +771,7 @@ const acceptHiveInvite = async (req, res) => {
 
     await hive.save();
 
-    res.json({
-      success: true,
-      message: "Hive invitation accepted",
-      hiveId: hive._id,
-    });
+    res.redirect(`snaphive://invite/${hive._id}`);
 
   } catch (err) {
     console.error("Accept invite error:", err);
@@ -802,4 +827,103 @@ const joinHiveByQR = async (req, res) => {
   }
 };
 
-module.exports = { createHive, updateHive, getUserHives, toggleLikeHive, addComment, getPublicHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive, joinHiveByQR };
+const deleteHiveMedia = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { hiveId } = req.params;
+    const { mediaId, mediaType } = req.body;
+
+    if (!mediaId || !mediaType || !["images", "videos"].includes(mediaType)) {
+      return res.status(400).json({ success: false, message: "Invalid mediaId or mediaType" });
+    }
+
+    const hive = await Hive.findById(hiveId);
+    if (!hive) {
+      return res.status(404).json({ success: false, message: "Hive not found" });
+    }
+
+    // Only owner can delete media files under their hive
+    if (hive.user.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "Only the hive owner can delete media files" });
+    }
+
+    const mediaArray = hive[mediaType];
+    const mediaItem = mediaArray.id ? mediaArray.id(mediaId) : null;
+    let urlToDelete = null;
+
+    if (mediaItem) {
+      urlToDelete = mediaItem.url;
+      mediaArray.pull(mediaId);
+    } else {
+      // Fallback search manually in case of schema/mongoose id helper mismatch
+      const itemIndex = mediaArray.findIndex(item => item._id && item._id.toString() === mediaId);
+      if (itemIndex > -1) {
+        urlToDelete = mediaArray[itemIndex].url;
+        mediaArray.splice(itemIndex, 1);
+      } else {
+        return res.status(404).json({ success: false, message: "Media item not found" });
+      }
+    }
+
+    // Delete from Firebase Storage if it has a Firebase URL
+    if (urlToDelete && urlToDelete.includes("/o/")) {
+      try {
+        const filePath = decodeURIComponent(
+          urlToDelete.split("/o/")[1].split("?")[0]
+        );
+        await bucket.file(filePath).delete();
+      } catch (err) {
+        console.warn("Failed to delete media file from Firebase storage:", err.message);
+      }
+    }
+
+    await hive.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Media deleted successfully",
+      images: hive.images,
+      videos: hive.videos,
+    });
+  } catch (err) {
+    console.error("Delete media error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+const uploadMediaAPI = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const { v4: uuidv4 } = require("uuid");
+    const path = require("path");
+
+    const originalName = req.file.originalname || "upload.bin";
+    const ext = path.extname(originalName) || ".bin";
+    const fileName = `hives/${req.user.id}/${uuidv4()}${ext}`;
+    const file = bucket.file(fileName);
+
+    await file.save(req.file.buffer, {
+      metadata: { contentType: req.file.mimetype },
+      public: true,
+    });
+
+    // Use Firebase Storage REST URL format so the delete logic can parse the /o/ path
+    const encodedPath = encodeURIComponent(fileName);
+    const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
+
+    console.log("✅ Uploaded to Firebase Storage:", publicUrl);
+
+    return res.status(200).json({
+      success: true,
+      url: publicUrl,
+    });
+  } catch (err) {
+    console.error("🔥 Backend media upload error:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { createHive, updateHive, getUserHives, toggleLikeHive, addComment, getPublicHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive, joinHiveByQR, uploadMediaAPI, deleteHiveMedia };

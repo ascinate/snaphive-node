@@ -1,6 +1,14 @@
 const dotenv = require("dotenv");
 dotenv.config();
 
+// Validate critical environment variables
+const requiredEnv = ["MONGO_URI", "JWT_SECRET"];
+requiredEnv.forEach((env) => {
+  if (!process.env[env]) {
+    console.error(`❌ CRITICAL ERROR: ${env} is missing in .env file`);
+  }
+});
+
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -18,6 +26,7 @@ const adminUserRoutes = require("./routes/adminUserRoutes");
 const adminStockRoutes =require("./routes/adminStockRoutes");
 const notificationRoutes =require("./routes/notificationRoutes");
 const publicStockRoutes =require("./routes/publicStockRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 
 const app = express();
@@ -106,6 +115,7 @@ app.use("/api/events", eventRoutes);
 app.use("/api/hives", hiveRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/stock-images", publicStockRoutes);
+app.use("/api/payments", paymentRoutes);
 
 
 
@@ -117,14 +127,15 @@ app.use((req, res) => {
 /* -------------------- ERROR -------------------- */
 app.use((err, req, res, next) => {
   console.error("🔥 Server Error:", err);
-  res.status(500).json({
-    message: err.message,
-    stack: err.stack,
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 });
 
 /* -------------------- SERVER -------------------- */
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

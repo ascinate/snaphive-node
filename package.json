@@ -12,26 +12,26 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "apple-signin-auth": "^2.0.0",
-    "axios": "1.13.5",
-    "bcrypt": "^6.0.0",
-    "connect-mongo": "^6.0.0",
+    "apple-signin-auth": "^1.7.5",
+    "bcryptjs": "^2.4.3",
+    "connect-mongo": "^5.1.0",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
+    "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
-    "express": "^5.1.0",
-    "express-session": "^1.19.0",
-    "firebase": "^12.4.0",
-    "firebase-admin": "^13.6.0",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "firebase-admin": "^12.7.0",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.20.0",
-    "mongoose": "^8.19.1",
-    "multer": "^2.0.2",
-    "nodemailer": "^7.0.9",
-    "socket.io-client": "4.8.3",
-    "twilio": "^5.12.2"
+    "mongodb": "^6.10.0",
+    "mongoose": "^8.8.2",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.16",
+    "socket.io": "^4.8.1",
+    "stripe": "^22.1.1",
+    "twilio": "^5.3.5",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.7"
   }
 }

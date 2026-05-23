@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
@@ -9,12 +9,15 @@ const userSchema = new mongoose.Schema(
       type: String,
       unique: true,
       sparse: true,
+      lowercase: true,
+      trim: true,
     },
 
     phone: {
       type: String,
       unique: true,
       sparse: true,
+      trim: true,
     },
 
 
