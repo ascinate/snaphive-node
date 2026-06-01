@@ -86,42 +86,27 @@ const register = async (req, res) => {
 
       if (email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         console.log(`📧 Sending verification email to: ${email}`);
-        try {
-          await sendEmail(
-            email,
-            "Your SnapHive OTP Verification Code",
-            `
-        <div style="font-family:sans-serif;line-height:1.6">
-          <h2>Welcome to SnapHive 🎉</h2>
-          <p>Your OTP code is:</p>
-          <h1 style="background:#000;color:#fff;
-          display:inline-block;padding:8px 16px;border-radius:8px;">
-            ${otp}
-          </h1>
-          <p>This code will expire in 5 minutes.</p>
-        </div>
-        `
-          );
-        } catch (emailErr) {
+        sendEmail(
+          email,
+          "Your SnapHive OTP Verification Code",
+          `
+      <div style="font-family:sans-serif;line-height:1.6">
+        <h2>Welcome to SnapHive 🎉</h2>
+        <p>Your OTP code is:</p>
+        <h1 style="background:#000;color:#fff;
+        display:inline-block;padding:8px 16px;border-radius:8px;">
+          ${otp}
+        </h1>
+        <p>This code will expire in 5 minutes.</p>
+      </div>
+      `
+        ).catch(async (emailErr) => {
           console.error("Failed to send OTP email. Activating test OTP '123456' for user. Error:", emailErr.message);
-          
           existingUser.isVerified = false;
           existingUser.otp = "123456";
           existingUser.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
           await existingUser.save();
-
-          return res.status(201).json({
-            success: true,
-            message: "OTP sent successfully (Bypassed SMTP. Use 123456 for testing)",
-            user: {
-              id: existingUser._id,
-              name: existingUser.name,
-              email: existingUser.email,
-              phone: existingUser.phone,
-              profileImage: existingUser.profileImage,
-            },
-          });
-        }
+        });
       } else if (email) {
         console.warn("⚠️ Email credentials missing. OTP created but not sent.");
       }
@@ -176,11 +161,10 @@ const register = async (req, res) => {
 
     if (email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       console.log(`📧 Sending verification email to: ${email}`);
-      try {
-        await sendEmail(
-          email,
-          "Your SnapHive OTP Verification Code",
-          `
+      sendEmail(
+        email,
+        "Your SnapHive OTP Verification Code",
+        `
       <div style="font-family:sans-serif;line-height:1.6">
         <h2>Welcome to SnapHive 🎉</h2>
         <p>Your OTP code is:</p>
@@ -191,27 +175,13 @@ const register = async (req, res) => {
         <p>This code will expire in 5 minutes.</p>
       </div>
       `
-        );
-      } catch (emailErr) {
+      ).catch(async (emailErr) => {
         console.error("Failed to send OTP email. Activating test OTP '123456' for user. Error:", emailErr.message);
-        
         user.isVerified = false;
         user.otp = "123456";
         user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
         await user.save();
-
-        return res.status(201).json({
-          success: true,
-          message: "OTP sent successfully (Bypassed SMTP. Use 123456 for testing)",
-          user: {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            profileImage: user.profileImage,
-          },
-        });
-      }
+      });
     } else if (email) {
       console.warn("⚠️ Email credentials missing. OTP created but not sent.");
     }
@@ -375,11 +345,10 @@ const login = async (req, res) => {
 
       if (user.email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         console.log(`📧 Sending verification email to: ${user.email}`);
-        try {
-          await sendEmail(
-            user.email,
-            "Your SnapHive OTP Verification Code",
-            `
+        sendEmail(
+          user.email,
+          "Your SnapHive OTP Verification Code",
+          `
         <div style="font-family:sans-serif;line-height:1.6">
           <h2>Welcome back to SnapHive 🎉</h2>
           <p>Your OTP code is:</p>
@@ -390,13 +359,12 @@ const login = async (req, res) => {
           <p>This code will expire in 5 minutes.</p>
         </div>
         `
-          );
-        } catch (emailErr) {
+        ).catch(async (emailErr) => {
           console.error("Failed to send OTP email. Activating test OTP '123456' for user. Error:", emailErr.message);
           user.otp = "123456";
           user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
           await user.save();
-        }
+        });
       } else if (user.email) {
         console.warn("⚠️ Email credentials missing. OTP created but not sent.");
       }
@@ -581,26 +549,23 @@ const forgotPassword = async (req, res) => {
     await user.save();
 
     if (process.env.EMAIL_USER) {
-      try {
-        await sendEmail(
-          email,
-          "SnapHive Password Reset OTP",
-          `
-            <div style="font-family:sans-serif;line-height:1.6">
-              <h2>Reset your SnapHive password 🔐</h2>
-              <p>Your password reset OTP is:</p>
-              <h1 style="background:#000;color:#fff;display:inline-block;padding:8px 16px;border-radius:8px;">${otp}</h1>
-              <p>This OTP will expire in 5 minutes.</p>
-            </div>
-          `
-        );
-      } catch (emailErr) {
+      sendEmail(
+        email,
+        "SnapHive Password Reset OTP",
+        `
+          <div style="font-family:sans-serif;line-height:1.6">
+            <h2>Reset your SnapHive password 🔐</h2>
+            <p>Your password reset OTP is:</p>
+            <h1 style="background:#000;color:#fff;display:inline-block;padding:8px 16px;border-radius:8px;">${otp}</h1>
+            <p>This OTP will expire in 5 minutes.</p>
+          </div>
+        `
+      ).catch(async (emailErr) => {
         console.error("Failed to send password reset email. Activating test OTP '123456' for user. Error:", emailErr.message);
         user.otp = "123456";
         user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
         await user.save();
-        return res.json({ success: true, message: "Password reset OTP sent to your email (Bypassed SMTP. Use 123456 for testing)" });
-      }
+      });
     }
 
     res.json({ success: true, message: "Password reset OTP sent to your email" });
@@ -655,26 +620,23 @@ const resendOTP = async (req, res) => {
     await user.save();
 
     if (email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      try {
-        await sendEmail(
-          email,
-          "SnapHive OTP Resend Request",
-          `
-            <div style="font-family:sans-serif;line-height:1.6">
-              <h2>Here’s your new SnapHive verification code 🔄</h2>
-              <p>Your new OTP code is:</p>
-              <h1 style="background:#000;color:#fff;display:inline-block;padding:8px 16px;border-radius:8px;">${otp}</h1>
-              <p>This code will expire in 5 minutes.</p>
-            </div>
-          `
-        );
-      } catch (emailErr) {
+      sendEmail(
+        email,
+        "SnapHive OTP Resend Request",
+        `
+          <div style="font-family:sans-serif;line-height:1.6">
+            <h2>Here’s your new SnapHive verification code 🔄</h2>
+            <p>Your new OTP code is:</p>
+            <h1 style="background:#000;color:#fff;display:inline-block;padding:8px 16px;border-radius:8px;">${otp}</h1>
+            <p>This code will expire in 5 minutes.</p>
+          </div>
+        `
+      ).catch(async (emailErr) => {
         console.error("Failed to send OTP email. Activating test OTP '123456' for user. Error:", emailErr.message);
         user.otp = "123456";
         user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
         await user.save();
-        return res.json({ success: true, message: "OTP resent successfully (Bypassed SMTP. Use 123456 for testing)" });
-      }
+      });
     } else if (email) {
       console.warn("⚠️ Email credentials missing. OTP created but not sent.");
     }
