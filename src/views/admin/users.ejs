@@ -11,53 +11,65 @@
         <button type="submit">Search</button>
       </form>
 
-      <table border="1" width="100%" cellpadding="10">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Verified</th>
-            <th>Joined</th>
-            <th>Action</th>
+      <form method="POST" action="/user/delete/bulk" id="bulkDeleteForm" onsubmit="return confirmBulkDelete()">
+        <button type="submit" id="bulkDeleteBtn" style="margin-bottom:15px;">
+          Delete
+        </button>
 
-          </tr>
-        </thead>
-
-        <tbody>
-          <% if (!users || users.length===0) { %>
+        <table border="1" width="100%" cellpadding="10">
+          <thead>
             <tr>
-              <td colspan="5" align="center">No users found</td>
+              <th>
+                <input type="checkbox" id="selectAllUsers" />
+              </th>
+              <th>#</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Verified</th>
+              <th>Joined</th>
+              <th>Action</th>
+
             </tr>
-            <% } %>
+          </thead>
 
-              <% users.forEach((user, index)=> { %>
-                <tr>
-                  <td>
-                    <%= (currentPage - 1) * 10 + index + 1 %>
-                  </td>
-                  <td>
-                    <%= user.name || "—" %>
-                  </td>
-                  <td>
-                    <%= user.email %>
-                  </td>
-                  <td style="color:<%= user.isVerified ? 'green' : 'red' %>">
-                    <%= user.isVerified ? "Yes" : "No" %>
-                  </td>
-                  <td>
-                    <%= new Date(user.createdAt).toDateString() %>
-                  </td>
-                  <td>
-                    <button onclick="openUserModal('<%= user._id %>')">
-                      View
-                    </button>
-                  </td>
+          <tbody>
+            <% if (!users || users.length===0) { %>
+              <tr>
+                <td colspan="7" align="center">No users found</td>
+              </tr>
+              <% } %>
 
-                </tr>
-                <% }) %>
-        </tbody>
-      </table>
+                <% users.forEach((user, index)=> { %>
+                  <tr>
+                    <td>
+                      <input type="checkbox" name="ids" value="<%= user._id %>" class="user-checkbox" />
+                    </td>
+                    <td>
+                      <%= (currentPage - 1) * 10 + index + 1 %>
+                    </td>
+                    <td>
+                      <%= user.name || "—" %>
+                    </td>
+                    <td>
+                      <%= user.email %>
+                    </td>
+                    <td style="color:<%= user.isVerified ? 'green' : 'red' %>">
+                      <%= user.isVerified ? "Yes" : "No" %>
+                    </td>
+                    <td>
+                      <%= new Date(user.createdAt).toDateString() %>
+                    </td>
+                    <td>
+                      <button type="button" onclick="openUserModal('<%= user._id %>')">
+                        View
+                      </button>
+                    </td>
+
+                  </tr>
+                  <% }) %>
+          </tbody>
+        </table>
+      </form>
 
       <!-- Pagination -->
       <% if (totalPages> 1) { %>
@@ -163,4 +175,41 @@
         function closeUserModal() {
           document.getElementById("userModal").style.display = "none";
         }
+
+        const selectAllUsers = document.getElementById("selectAllUsers");
+        const bulkDeleteBtn = document.getElementById("bulkDeleteBtn");
+        const userCheckboxes = document.querySelectorAll(".user-checkbox");
+
+        function updateBulkDeleteButton() {
+          const checkedCount = document.querySelectorAll(".user-checkbox:checked").length;
+          bulkDeleteBtn.disabled = checkedCount === 0;
+        }
+
+        selectAllUsers.addEventListener("change", () => {
+          userCheckboxes.forEach((checkbox) => {
+            checkbox.checked = selectAllUsers.checked;
+          });
+          updateBulkDeleteButton();
+        });
+
+        userCheckboxes.forEach((checkbox) => {
+          checkbox.addEventListener("change", () => {
+            const checkedCount = document.querySelectorAll(".user-checkbox:checked").length;
+            selectAllUsers.checked = checkedCount === userCheckboxes.length && userCheckboxes.length > 0;
+            updateBulkDeleteButton();
+          });
+        });
+
+        function confirmBulkDelete() {
+          const checkedCount = document.querySelectorAll(".user-checkbox:checked").length;
+
+          if (checkedCount === 0) {
+            alert("Please select at least one user.");
+            return false;
+          }
+
+          return confirm("Delete selected users?");
+        }
+
+        updateBulkDeleteButton();
       </script>

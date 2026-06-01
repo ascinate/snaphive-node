@@ -503,14 +503,16 @@ const getAllUsers = async (req, res) => {
     const search = req.query.search || "";
 
     // 🔍 Search by name OR email
-    const query = search
-      ? {
-          $or: [
-            { name: { $regex: search, $options: "i" } },
-            { email: { $regex: search, $options: "i" } },
-          ],
-        }
-      : {};
+    const query = {
+      isDeleted: { $ne: true },
+    };
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
 
     const totalUsers = await User.countDocuments(query);
 
@@ -557,6 +559,24 @@ const toggleUser = async (req, res) => {
 };
 const softDeleteUser = async (req, res) => {
   await User.findByIdAndUpdate(req.params.id, { isDeleted: true });
+  res.redirect("/user");
+};
+const bulkSoftDeleteUsers = async (req, res) => {
+  const ids = Array.isArray(req.body.ids)
+    ? req.body.ids
+    : req.body.ids
+      ? [req.body.ids]
+      : [];
+
+  const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+
+  if (validIds.length > 0) {
+    await User.updateMany(
+      { _id: { $in: validIds } },
+      { isDeleted: true }
+    );
+  }
+
   res.redirect("/user");
 };
 const resetUserAccount = async (req, res) => {
@@ -610,6 +630,7 @@ module.exports = {
   getUserProfileAdmin,
   toggleUser,
   softDeleteUser,
+  bulkSoftDeleteUsers,
   resetUserAccount,
   getAllImages,
   getHivechats,
