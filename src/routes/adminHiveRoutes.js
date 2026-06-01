@@ -1,5 +1,5 @@
 const express = require("express");
-const { getAllHives,getHivechats,getHiveDetails,deleteMessage,getHiveImages,updateHiveStatus,flagHive,removeHiveImage } = require("../controllers/adminController");
+const { getAllHives,getHivechats,getHiveDetails,deleteMessage,getHiveImages,updateHiveStatus,flagHive,removeHiveImage,deleteHives } = require("../controllers/adminController");
 const adminAuth = require("../middleware/adminAuth");
 
 
@@ -16,6 +16,7 @@ router.delete(
 );
 
 router.get("/", adminAuth,getAllHives);
+router.post("/delete/bulk", adminAuth, deleteHives);
 router.get("/:id", adminAuth, getHiveDetails);
 router.get("/:id/images", adminAuth, getHiveImages);
 router.get("/:id/chats", adminAuth, getHivechats);

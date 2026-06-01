@@ -25,10 +25,18 @@
 
 
       <!-- Hive Table -->
-      <table border="1" width="100%" cellpadding="10">
-        <thead>
-          <tr>
+      <form method="POST" action="/hive/delete/bulk" id="hiveDeleteForm" onsubmit="return confirmHiveDelete()"></form>
+      <button type="submit" form="hiveDeleteForm" id="hiveDeleteBtn" style="margin-bottom:15px;">
+        Delete
+      </button>
 
+      <table border="1" width="100%" cellpadding="10">
+          <thead>
+            <tr>
+
+            <th>
+              <input type="checkbox" id="selectAllHives" />
+            </th>
             <th>#</th>
             <th>Hive Name</th>
             <th>Owner</th>
@@ -38,15 +46,18 @@
             <th>Flag</th>
             <th>Created</th>
             <th>Actions</th>
-          </tr>
-        </thead>
+            </tr>
+          </thead>
 
-        <tbody>
-          <% if( hives && hives.length>0 ) { %>
+          <tbody>
+            <% if( hives && hives.length>0 ) { %>
 
             <% hives.forEach((hive, index)=> { %>
               <tr>
 
+                <td>
+                  <input type="checkbox" name="ids" value="<%= hive._id %>" class="hive-checkbox" form="hiveDeleteForm" />
+                </td>
                 <td>
                   <%= index + 1 %>
                 </td>
@@ -109,16 +120,16 @@
 
 
               </tr>
-              <% }) %>
+                <% }) %>
                 <% } else { %>
                   <tr>
-                    <td colspan="8" style="text-align:center; padding:20px;">
+                    <td colspan="9" style="text-align:center; padding:20px;">
                       No hives found.
                     </td>
                   </tr>
                   <% } %>
-        </tbody>
-      </table>
+          </tbody>
+        </table>
 
 
 
@@ -427,5 +438,42 @@
     </div>
   `);
         }
+
+        const selectAllHives = document.getElementById("selectAllHives");
+        const hiveDeleteBtn = document.getElementById("hiveDeleteBtn");
+        const hiveCheckboxes = document.querySelectorAll(".hive-checkbox");
+
+        function updateHiveDeleteButton() {
+          const checkedCount = document.querySelectorAll(".hive-checkbox:checked").length;
+          hiveDeleteBtn.disabled = checkedCount === 0;
+        }
+
+        selectAllHives.addEventListener("change", () => {
+          hiveCheckboxes.forEach((checkbox) => {
+            checkbox.checked = selectAllHives.checked;
+          });
+          updateHiveDeleteButton();
+        });
+
+        hiveCheckboxes.forEach((checkbox) => {
+          checkbox.addEventListener("change", () => {
+            const checkedCount = document.querySelectorAll(".hive-checkbox:checked").length;
+            selectAllHives.checked = checkedCount === hiveCheckboxes.length && hiveCheckboxes.length > 0;
+            updateHiveDeleteButton();
+          });
+        });
+
+        function confirmHiveDelete() {
+          const checkedCount = document.querySelectorAll(".hive-checkbox:checked").length;
+
+          if (checkedCount === 0) {
+            alert("Please select at least one hive.");
+            return false;
+          }
+
+          return confirm("Delete selected hives?");
+        }
+
+        updateHiveDeleteButton();
 
       </script>

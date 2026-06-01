@@ -450,12 +450,21 @@ const deleteHives = async (req, res) => {
   try {
     const { id } = req.params;
     const { ids } = req.body;
+    const selectedIds = Array.isArray(ids)
+      ? ids
+      : ids
+        ? [ids]
+        : [];
 
     // 🔥 Multiple delete
-    if (ids && Array.isArray(ids) && ids.length > 0) {
+    if (selectedIds.length > 0) {
       const result = await Hive.deleteMany({
-        _id: { $in: ids },
+        _id: { $in: selectedIds },
       });
+
+      if (req.method === "POST") {
+        return res.redirect("/hive");
+      }
 
       return res.json({
         success: true,
@@ -478,6 +487,10 @@ const deleteHives = async (req, res) => {
         success: true,
         message: "Hive deleted successfully",
       });
+    }
+
+    if (req.method === "POST") {
+      return res.redirect("/hive");
     }
 
     return res.status(400).json({
