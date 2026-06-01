@@ -572,6 +572,7 @@ const toggleUser = async (req, res) => {
 };
 const softDeleteUser = async (req, res) => {
   await User.findByIdAndUpdate(req.params.id, { isDeleted: true });
+  await Hive.deleteMany({ user: req.params.id });
   res.redirect("/user");
 };
 const bulkSoftDeleteUsers = async (req, res) => {
@@ -588,6 +589,7 @@ const bulkSoftDeleteUsers = async (req, res) => {
       { _id: { $in: validIds } },
       { isDeleted: true }
     );
+    await Hive.deleteMany({ user: { $in: validIds } });
   }
 
   res.redirect("/user");
