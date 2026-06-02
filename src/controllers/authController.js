@@ -12,22 +12,21 @@ const twilioClient = twilio(
 );
 
 const sendEmail = async (email, subject, html) => {
-  // Use explicit SMTP config instead of 'service: gmail' for better compatibility
-  // with cloud hosting environments like Render, Railway etc.
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 587,
-    secure: false, // true for 465, false for 587 with STARTTLS
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
-    tls: {
-      rejectUnauthorized: false,
-    },
+    tls: { rejectUnauthorized: false },
+    // Prevent SMTP from hanging indefinitely on cloud hosts
+    connectionTimeout: 8000,  // 8s to establish connection
+    greetingTimeout: 8000,    // 8s for server greeting
+    socketTimeout: 10000,     // 10s idle socket timeout
   });
 
-  // Verify connection before sending
   await transporter.verify();
 
   await transporter.sendMail({
@@ -38,6 +37,17 @@ const sendEmail = async (email, subject, html) => {
   });
 
   console.log(`✅ Email sent successfully to: ${email}`);
+};
+
+// Wraps sendEmail with a 5s timeout — if SMTP hangs, resolves as failed so
+// signup/resend can still return quickly and fall back to OTP 123456.
+const sendEmailWithTimeout = (email, subject, html, timeoutMs = 5000) => {
+  return Promise.race([
+    sendEmail(email, subject, html),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Email timed out after ${timeoutMs}ms`)), timeoutMs)
+    ),
+  ]);
 };
 
 
@@ -101,7 +111,7 @@ const register = async (req, res) => {
 
       if (email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         console.log(`📧 Sending verification email to: ${email}`);
-        await sendEmail(
+        await sendEmailWithTimeout(
           email,
           "Your SnapHive OTP Verification Code",
           `
@@ -181,7 +191,7 @@ const register = async (req, res) => {
 
     if (email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       console.log(`📧 Sending verification email to: ${email}`);
-      await sendEmail(
+      await sendEmailWithTimeout(
         email,
         "Your SnapHive OTP Verification Code",
         `
@@ -378,7 +388,7 @@ const login = async (req, res) => {
 
       if (user.email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         console.log(`📧 Sending verification email to: ${user.email}`);
-        await sendEmail(
+        await sendEmailWithTimeout(
           user.email,
           "Your SnapHive OTP Verification Code",
           `
@@ -586,7 +596,7 @@ const forgotPassword = async (req, res) => {
     await user.save();
 
     if (process.env.EMAIL_USER) {
-      await sendEmail(
+      await sendEmailWithTimeout(
         email,
         "SnapHive Password Reset OTP",
         `
@@ -657,7 +667,7 @@ const resendOTP = async (req, res) => {
     await user.save();
 
     if (email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      await sendEmail(
+      await sendEmailWithTimeout(
         email,
         "SnapHive OTP Resend Request",
         `
