@@ -122,6 +122,8 @@ const saveHiveImageUrls = async (req, res) => {
     }
 
     const isOwner = hive.user && hive.user.toString() === userId;
+    
+    console.log(`[Upload Debug] userId: ${userId}, hive.user: ${hive.user}, isOwner: ${isOwner}`);
 
     // Check membership by memberId (QR joins) OR by email (invite links)
     const isMember = hive.members.some(
@@ -132,8 +134,10 @@ const saveHiveImageUrls = async (req, res) => {
           (m.email && userEmail && m.email === userEmail)
         )
     );
+    console.log(`[Upload Debug] isMember: ${isMember}`);
 
     if (!isOwner && !isMember) {
+      console.log(`[Upload Debug] 403 Not allowed to upload`);
       return res.status(403).json({ message: "Not allowed to upload" });
     }
 
@@ -640,6 +644,9 @@ const inviteMember = async (req, res) => {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS,
           },
+          connectionTimeout: 5000,
+          greetingTimeout: 5000,
+          socketTimeout: 5000,
         });
 
         const acceptUrl = `${req.protocol}://${req.get("host")}/api/hives/${hive._id}/accept-request?email=${email}`;
@@ -656,12 +663,19 @@ const inviteMember = async (req, res) => {
           </div>
         `;
 
-        await transporter.sendMail({
-          from: `"SnapHive" <${process.env.EMAIL_USER}>`,
-          to: email,
-          subject: `Invitation to join "${hive.hiveName}"`,
-          html: inviteHTML,
-        });
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('SMTP connection timed out')), 5000)
+        );
+
+        await Promise.race([
+          transporter.sendMail({
+            from: `"SnapHive" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: `Invitation to join "${hive.hiveName}"`,
+            html: inviteHTML,
+          }),
+          timeoutPromise
+        ]);
       } catch (emailErr) {
         console.error("Failed to send invitation email via SMTP. Error:", emailErr.message);
       }
