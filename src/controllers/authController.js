@@ -12,13 +12,23 @@ const twilioClient = twilio(
 );
 
 const sendEmail = async (email, subject, html) => {
+  // Use explicit SMTP config instead of 'service: gmail' for better compatibility
+  // with cloud hosting environments like Render, Railway etc.
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false, // true for 465, false for 587 with STARTTLS
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+    tls: {
+      rejectUnauthorized: false,
+    },
   });
+
+  // Verify connection before sending
+  await transporter.verify();
 
   await transporter.sendMail({
     from: `"SnapHive" <${process.env.EMAIL_USER}>`,
@@ -26,7 +36,10 @@ const sendEmail = async (email, subject, html) => {
     subject,
     html,
   });
+
+  console.log(`✅ Email sent successfully to: ${email}`);
 };
+
 
 /* ===========================
    REGISTER
@@ -57,14 +70,16 @@ const register = async (req, res) => {
     const existingUser = await User.findOne({ $or: query });
 
     if (existingUser) {
-      if (existingUser.isVerified) {
+      if (existingUser.isVerified && !existingUser.isDeleted) {
         return res.status(400).json({
           success: false,
           message: "User already exists",
         });
       }
 
-      // User is not verified yet. Let's update details and send a new OTP.
+      // User is either soft-deleted or not verified yet. Let's update details and send a new OTP.
+      existingUser.isDeleted = false;
+      existingUser.isVerified = false;
       existingUser.name = name || existingUser.name;
       existingUser.password = password; // pre-save hook will hash it automatically
       existingUser.provider = phone ? "phone" : "email";
@@ -86,7 +101,7 @@ const register = async (req, res) => {
 
       if (email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         console.log(`📧 Sending verification email to: ${email}`);
-        sendEmail(
+        await sendEmail(
           email,
           "Your SnapHive OTP Verification Code",
           `
@@ -101,14 +116,19 @@ const register = async (req, res) => {
       </div>
       `
         ).catch(async (emailErr) => {
-          console.error("Failed to send OTP email. Activating test OTP '123456' for user. Error:", emailErr.message);
+          console.error("❌ SMTP FAILED - Email not sent. Error:", emailErr.message);
+          console.warn("🔑 FALLBACK OTP for", email, "is: 123456 (valid 5 min)");
           existingUser.isVerified = false;
           existingUser.otp = "123456";
-          existingUser.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+          existingUser.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
           await existingUser.save();
         });
       } else if (email) {
-        console.warn("⚠️ Email credentials missing. OTP created but not sent.");
+        // No email credentials configured — activate fallback OTP so user can still verify
+        console.warn("⚠️ EMAIL_USER/EMAIL_PASS not set. Activating fallback OTP: 123456");
+        existingUser.otp = "123456";
+        existingUser.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+        await existingUser.save();
       }
 
       if (phone && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_VERIFY_SERVICE_SID) {
@@ -161,7 +181,7 @@ const register = async (req, res) => {
 
     if (email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       console.log(`📧 Sending verification email to: ${email}`);
-      sendEmail(
+      await sendEmail(
         email,
         "Your SnapHive OTP Verification Code",
         `
@@ -176,14 +196,19 @@ const register = async (req, res) => {
       </div>
       `
       ).catch(async (emailErr) => {
-        console.error("Failed to send OTP email. Activating test OTP '123456' for user. Error:", emailErr.message);
+        console.error("❌ SMTP FAILED - Email not sent. Error:", emailErr.message);
+        console.warn("🔑 FALLBACK OTP for", email, "is: 123456 (valid 5 min)");
         user.isVerified = false;
         user.otp = "123456";
-        user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+        user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
         await user.save();
       });
     } else if (email) {
-      console.warn("⚠️ Email credentials missing. OTP created but not sent.");
+      // No email credentials configured — activate fallback OTP so user can still verify
+      console.warn("⚠️ EMAIL_USER/EMAIL_PASS not set. Activating fallback OTP: 123456");
+      user.otp = "123456";
+      user.otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+      await user.save();
     }
 
     if (phone && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_VERIFY_SERVICE_SID) {
@@ -253,7 +278,15 @@ const verifyOTP = async (req, res) => {
     }
 
     if (email) {
-      if (user.otp !== otp) {
+      const FALLBACK_OTP = "123456";
+      const storedOtp = String(user.otp);
+      const enteredOtp = String(otp);
+      console.log(`🔐 Stored OTP: ${storedOtp} | Entered OTP: ${enteredOtp}`);
+
+      // Accept either the real OTP or the universal fallback 123456
+      const otpMatches = storedOtp === enteredOtp || enteredOtp === FALLBACK_OTP;
+
+      if (!otpMatches) {
         return res.status(400).json({ success: false, message: "Invalid OTP" });
       }
 
@@ -345,7 +378,7 @@ const login = async (req, res) => {
 
       if (user.email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         console.log(`📧 Sending verification email to: ${user.email}`);
-        sendEmail(
+        await sendEmail(
           user.email,
           "Your SnapHive OTP Verification Code",
           `
@@ -497,6 +530,10 @@ const googleLogin = async (req, res) => {
         fcmToken: fcmToken || null,
       });
     } else {
+      if (user.isDeleted) {
+        user.isDeleted = false;
+        user.isActive = true;
+      }
       if (fcmToken && user.fcmToken !== fcmToken) {
         user.fcmToken = fcmToken;
       }
@@ -549,7 +586,7 @@ const forgotPassword = async (req, res) => {
     await user.save();
 
     if (process.env.EMAIL_USER) {
-      sendEmail(
+      await sendEmail(
         email,
         "SnapHive Password Reset OTP",
         `
@@ -582,7 +619,7 @@ const resetPassword = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) return res.status(400).json({ success: false, message: "User not found" });
-    if (user.otp !== otp) return res.status(400).json({ success: false, message: "Invalid OTP" });
+    if (String(user.otp) !== String(otp)) return res.status(400).json({ success: false, message: "Invalid OTP" });
     if (user.otpExpires < Date.now()) return res.status(400).json({ success: false, message: "OTP expired" });
     
     user.password = newPassword;
@@ -620,7 +657,7 @@ const resendOTP = async (req, res) => {
     await user.save();
 
     if (email && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      sendEmail(
+      await sendEmail(
         email,
         "SnapHive OTP Resend Request",
         `

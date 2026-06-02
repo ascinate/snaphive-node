@@ -121,7 +121,7 @@ const saveHiveImageUrls = async (req, res) => {
       return res.status(404).json({ message: "Hive not found" });
     }
 
-    const isOwner = hive.user.toString() === userId;
+    const isOwner = hive.user && hive.user.toString() === userId;
 
     // Check membership by memberId (QR joins) OR by email (invite links)
     const isMember = hive.members.some(
@@ -183,9 +183,8 @@ const saveHiveImageUrls = async (req, res) => {
           ? "PHOTO_UPLOADED"
           : "VIDEO_UPLOADED";
 
-    // MEMBER → OWNER
     if (!isOwner) {
-      const owner = await User.findById(hive.user);
+      const owner = hive.user ? await User.findById(hive.user) : null;
       if (owner?.fcmToken) {
         await sendPush(
           owner.fcmToken,
@@ -278,7 +277,7 @@ const deleteHive = async (req, res) => {
     }
 
     // 🔒 Only owner can delete
-    if (hive.user.toString() !== userId) {
+    if (!hive.user || hive.user.toString() !== userId) {
       return res.status(403).json({
         success: false,
         message: "You are not allowed to delete this hive",
@@ -536,8 +535,8 @@ const getHiveById = async (req, res) => {
       });
     }
 
-    const userRole =
-      hive.user._id.toString() === userId.toString() ? "owner" : "member";
+    const isOwner = hive.user && (hive.user._id || hive.user).toString() === userId.toString();
+    const userRole = isOwner ? "owner" : "member";
 
     // 🔹 EXPIRY LOGIC (unchanged)
     if (hive.isTemporary && hive.expiryDate) {
@@ -843,7 +842,7 @@ const deleteHiveMedia = async (req, res) => {
     }
 
     // Only owner can delete media files under their hive
-    if (hive.user.toString() !== userId) {
+    if (!hive.user || hive.user.toString() !== userId) {
       return res.status(403).json({ success: false, message: "Only the hive owner can delete media files" });
     }
 
