@@ -62,6 +62,21 @@ const hiveSchema = new mongoose.Schema({
   ],
   isExpired: { type: Boolean, default: false },
 
+  isDisposableMode: { type: Boolean, default: false },
+  unlockDate: { type: Date },
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      required: false
+    },
+    coordinates: {
+      type: [Number],
+      required: false
+    }
+  },
+  geofenceRadius: { type: Number, default: 50 }, // in meters
+
   likes: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -95,6 +110,8 @@ hiveSchema.methods.checkExpiry = function () {
     this.isExpired = true;
   }
 };
+
+hiveSchema.index({ location: "2dsphere" });
 
 module.exports = mongoose.model("Hive", hiveSchema);
 

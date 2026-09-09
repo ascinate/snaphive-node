@@ -23,10 +23,23 @@ const createHive = async (req, res) => {
       endTime,
       expiryDate,
       coverImage,
+      isDisposableMode,
+      unlockDate,
+      lat,
+      lng,
+      geofenceRadius
     } = req.body;
 
     if (!hiveName) {
       return res.status(400).json({ success: false, message: "Hive name is required" });
+    }
+
+    let location = undefined;
+    if (lat && lng) {
+        location = {
+            type: 'Point',
+            coordinates: [parseFloat(lng), parseFloat(lat)]
+        };
     }
 
     const hive = await Hive.create({
@@ -39,6 +52,10 @@ const createHive = async (req, res) => {
       endTime,
       expiryDate,
       coverImage,
+      isDisposableMode: isDisposableMode || false,
+      unlockDate: unlockDate || null,
+      location,
+      geofenceRadius: geofenceRadius || 50
     });
 
     res.status(201).json({
@@ -561,6 +578,14 @@ const getHiveById = async (req, res) => {
         await hive.save();
       }
     }
+    
+    // Mask disposable media if locked
+    if (hive.isDisposableMode && hive.unlockDate && new Date() < new Date(hive.unlockDate)) {
+      if (userRole !== "owner") {
+        hive.images = hive.images.map(img => ({ ...img.toObject(), url: "LOCKED" }));
+        hive.videos = hive.videos.map(vid => ({ ...vid.toObject(), url: "LOCKED", thumbnail: "LOCKED" }));
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -939,4 +964,36 @@ const uploadMediaAPI = async (req, res) => {
   }
 };
 
-module.exports = { createHive, updateHive, getUserHives, toggleLikeHive, addComment, getPublicHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive, joinHiveByQR, uploadMediaAPI, deleteHiveMedia };
+const getNearbyHives = async (req, res) => {
+  try {
+    const { lat, lng, radius } = req.query;
+    if (!lat || !lng) {
+      return res.status(400).json({ success: false, message: "lat and lng are required" });
+    }
+
+    const distanceInMeters = parseInt(radius) || 5000; // default 5km
+
+    const hives = await Hive.find({
+      privacyMode: "public",
+      status: "active",
+      location: {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [parseFloat(lng), parseFloat(lat)]
+          },
+          $maxDistance: distanceInMeters
+        }
+      }
+    })
+    .populate("user", "name email profileImage")
+    .sort({ createdAt: -1 })
+    .limit(50);
+
+    res.status(200).json({ success: true, count: hives.length, hives });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { createHive, updateHive, getUserHives, toggleLikeHive, addComment, getPublicHives, saveHiveImageUrls, getHiveById, inviteMember, acceptHiveInvite, blurHiveImage, deleteHive, joinHiveByQR, uploadMediaAPI, deleteHiveMedia, getNearbyHives };
